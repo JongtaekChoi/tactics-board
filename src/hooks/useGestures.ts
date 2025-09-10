@@ -55,15 +55,46 @@ export const useGestures = ({
       }
     });
 
+  // 플레이어 드래그 제스처
+  const draggingPlayerId = useSharedValue<string | null>(null);
+  const onStartDrag = (e: any) => {
+    if (mode !== "move") return;
+    const { x, y } = e;
+    const nearest = findNearestPlayer(x, y, players);
+    if (nearest) {
+      draggingPlayerId.value = nearest.id;
+      onPlayerSelect(nearest.id);
+    }
+  };
+  const onUpdateDrag = (e: any) => {
+    if (mode !== "move" || !draggingPlayerId.value) return;
+    const { x, y } = e;
+    onPlayerMove(draggingPlayerId.value, x, y);
+  };
+
+  const dragPlayer = Gesture.Pan()
+    .enabled(mode === "move")
+    .onStart((e) => {
+      runOnJS(onStartDrag)(e);
+    })
+    .onUpdate((e) => {
+      runOnJS(onUpdateDrag)(e);
+    })
+    .onEnd(() => {
+      draggingPlayerId.value = null;
+      runOnJS(onPlayerSelect)(null);
+    });
+
   const onTab = (x: number, y: number) => {
     try {
       const nearest = findNearestPlayer(x, y, players);
-      console.log("Tapped player:", nearest);
       if (nearest) {
         onPlayerSelect(nearest.id);
+        draggingPlayerId.value = nearest.id;
       } else if (selectedId) {
         onPlayerMove(selectedId, x, y);
         onPlayerSelect(null);
+        draggingPlayerId.value = null;
       }
     } catch (error) {
       console.error("Gesture tap error:", error);
@@ -72,7 +103,6 @@ export const useGestures = ({
 
   const onDoubleTap = (x: number, y: number) => {
     try {
-      console.log("Double tapped player:");
       const nearest = findNearestPlayer(x, y, players);
       if (nearest) {
         onPlayerEdit(nearest.id);
@@ -97,7 +127,12 @@ export const useGestures = ({
       runOnJS(onTab)(x, y);
     });
 
-  const composedGesture = Gesture.Exclusive(drawPan, doubleTap, tap);
+  const composedGesture = Gesture.Exclusive(
+    drawPan,
+    doubleTap,
+    tap,
+    dragPlayer
+  );
 
   return { composedGesture };
 };

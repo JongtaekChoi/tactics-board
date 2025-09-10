@@ -29,34 +29,42 @@ export default function Toolbar({
   canRedo,
 }: ToolbarProps) {
   return (
-    <View style={styles.toolbar}>
+    <ScrollView 
+      horizontal 
+      style={styles.toolbar}
+      contentContainerStyle={styles.toolbarContent}
+      showsHorizontalScrollIndicator={false}
+    >
       <Button
         onPress={() => onModeChange("move")}
         active={mode === "move"}
         icon="move"
-        label="이동"
+        size="small"
       />
       <Button
         onPress={() => onModeChange("draw")}
         active={mode === "draw"}
         icon="pencil"
-        label="펜"
+        size="small"
       />
-      <Button onPress={onUndo} icon="arrow-undo" disabled={!canUndo} />
-      <Button onPress={onRedo} icon="arrow-redo" disabled={!canRedo} />
-      <Button onPress={onReset} icon="refresh" />
-      <Button onPress={onSave} icon="save" />
-      <Button onPress={onSaveAs} icon="copy" />
-      <Button onPress={onLoad} icon="folder-open" />
-    </View>
+      <Button onPress={onUndo} icon="arrow-undo" disabled={!canUndo} size="small" />
+      <Button onPress={onRedo} icon="arrow-redo" disabled={!canRedo} size="small" />
+      <Button onPress={onReset} icon="refresh" size="small" />
+      <Button onPress={onSave} icon="save" size="small" />
+      <Button onPress={onSaveAs} icon="copy" size="small" />
+      <Button onPress={onLoad} icon="folder-open" size="small" />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   toolbar: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
     marginBottom: 8,
+  },
+  toolbarContent: {
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 12,
+    alignItems: 'center',
   },
 });
