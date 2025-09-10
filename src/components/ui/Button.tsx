@@ -5,18 +5,26 @@ interface ButtonProps {
   onPress: () => void;
   label: string;
   active?: boolean;
+  disabled?: boolean;
 }
 
-export default function Button({ onPress, label, active }: ButtonProps) {
+export default function Button({ onPress, label, active, disabled }: ButtonProps) {
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
       style={[
         styles.btn,
         active && { backgroundColor: "#222", borderColor: "#fff" },
+        disabled && { backgroundColor: "#1a1a1a", borderColor: "#333" },
       ]}
     >
-      <Text style={{ color: "white", fontWeight: "600" }}>{label}</Text>
+      <Text style={[
+        { color: "white", fontWeight: "600" },
+        disabled && { color: "#666" }
+      ]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }

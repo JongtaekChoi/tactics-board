@@ -8,9 +8,12 @@ interface ToolbarProps {
   onModeChange: (mode: Mode) => void;
   onUndo: () => void;
   onRedo: () => void;
+  onReset: () => void;
   onExport: () => void;
   onSave: () => void;
   onLoad: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export default function Toolbar({
@@ -18,9 +21,12 @@ export default function Toolbar({
   onModeChange,
   onUndo,
   onRedo,
+  onReset,
   onExport,
   onSave,
   onLoad,
+  canUndo,
+  canRedo,
 }: ToolbarProps) {
   return (
     <View style={styles.toolbar}>
@@ -34,8 +40,9 @@ export default function Toolbar({
         active={mode === "draw"}
         label="펜"
       />
-      <Button onPress={onUndo} label="Undo" />
-      <Button onPress={onRedo} label="Redo" />
+      <Button onPress={onUndo} label="Undo" disabled={!canUndo} />
+      <Button onPress={onRedo} label="Redo" disabled={!canRedo} />
+      <Button onPress={onReset} label="Reset" />
       {/* TODO: Export 기능 디버깅 필요 - 현재 동작 불안정 */}
       {/* <Button onPress={onExport} label="Export" /> */}
       <Button onPress={onSave} label="Save" />

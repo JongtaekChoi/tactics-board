@@ -14,8 +14,7 @@ import TacticsBoard from '../components/board/TacticsBoard';
 import Toolbar from '../components/ui/Toolbar';
 import ColorPicker from '../components/ui/ColorPicker';
 import TextEditModal from '../components/ui/TextEditModal';
-import { useDrawing } from '../hooks/useDrawing';
-import { usePlayerMovement } from '../hooks/usePlayerMovement';
+import { useBoardState } from '../hooks/useBoardState';
 import { useGestures } from '../hooks/useGestures';
 
 type BoardScreenProps = {
@@ -35,23 +34,22 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
-  // Custom hooks
-  const drawing = useDrawing();
-  const players = usePlayerMovement();
+  // Custom hook - 통합된 보드 상태 관리
+  const board = useBoardState();
 
   // 제스처 핸들러
   const { composedGesture } = useGestures({
     mode,
     color,
     width: widthPx,
-    players: players.allPlayers,
-    onStartDrawing: (point) => drawing.startDrawing(point, color, widthPx),
-    onUpdateDrawing: drawing.updateDrawing,
-    onFinishDrawing: drawing.finishDrawing,
-    onPlayerSelect: players.setSelectedId,
-    onPlayerMove: players.movePlayer,
+    players: board.allPlayers,
+    onStartDrawing: (point) => board.startDrawing(point, color, widthPx),
+    onUpdateDrawing: board.updateDrawing,
+    onFinishDrawing: board.finishDrawing,
+    onPlayerSelect: board.setSelectedId,
+    onPlayerMove: board.movePlayer,
     onPlayerEdit: openTextEditor,
-    selectedId: players.selectedId,
+    selectedId: board.selectedId,
   });
 
   useEffect(() => {
@@ -66,8 +64,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
       if (savedData) {
         const { name, data }: { name: string; data: BoardData } = JSON.parse(savedData);
         setBoardName(name);
-        players.setPlayersFromData(data.home, data.away, data.ball);
-        drawing.setStrokesFromData(data.strokes);
+        board.loadFromData(data.home, data.away, data.ball, data.strokes);
       }
     } catch (error) {
       console.error('보드 로드 실패:', error);
@@ -77,7 +74,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   // 텍스트 편집 함수들
   function openTextEditor(playerId: string) {
     if (playerId === 'ball') return; // 볼은 편집 불가
-    const player = players.allPlayers.find(p => p.id === playerId);
+    const player = board.allPlayers.find(p => p.id === playerId);
     if (player) {
       setEditText(player.label);
       setEditingPlayer(playerId);
@@ -86,7 +83,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
 
   const saveTextEdit = () => {
     if (!editingPlayer) return;
-    players.updatePlayerLabel(editingPlayer, editText);
+    board.updatePlayerLabel(editingPlayer, editText);
     setEditingPlayer(null);
     setEditText("");
   };
@@ -105,10 +102,10 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
             
             const id = boardId || Date.now().toString();
             const boardData: BoardData = {
-              home: players.home,
-              away: players.away,
-              ball: players.ball,
-              strokes: drawing.strokes,
+              home: board.home,
+              away: board.away,
+              ball: board.ball,
+              strokes: board.strokes,
             };
 
             try {
@@ -155,11 +152,14 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
       <Toolbar
         mode={mode}
         onModeChange={setMode}
-        onUndo={drawing.undo}
-        onRedo={drawing.redo}
+        onUndo={board.undo}
+        onRedo={board.redo}
+        onReset={board.reset}
         onExport={sharePng}
         onSave={handleSave}
         onLoad={handleLoad}
+        canUndo={board.canUndo}
+        canRedo={board.canRedo}
       />
 
       <ColorPicker
@@ -171,10 +171,10 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
 
       <View ref={shotRef}>
         <TacticsBoard
-          players={players.allPlayers}
-          strokes={drawing.strokes}
-          currentStroke={drawing.current}
-          selectedId={players.selectedId}
+          players={board.allPlayers}
+          strokes={board.strokes}
+          currentStroke={board.currentStroke}
+          selectedId={board.selectedId}
           gesture={composedGesture}
         />
       </View>
