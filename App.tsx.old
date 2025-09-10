@@ -1,0 +1,547 @@
+import * as Sharing from "expo-sharing";
+
+import {
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import React, { useRef, useState } from "react";
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { captureRef } from "react-native-view-shot";
+
+type Point = { x: number; y: number };
+type Stroke = { color: string; width: number; points: Point[] };
+type Player = { 
+  id: string; 
+  x: number; 
+  y: number; 
+  side: 'home' | 'away' | 'ball'; 
+  label: string;
+};
+
+const { width } = Dimensions.get("window");
+const BOARD_W = width;
+const BOARD_H = Math.round(width * 1.6);
+
+const initialPlayers = (side: "home" | "away"): Player[] =>
+  Array.from({ length: 11 }).map((_, i) => ({
+    id: `${side}-${i + 1}`,
+    x: side === "home" ? BOARD_W * 0.25 : BOARD_W * 0.75,
+    y: BOARD_H * (0.08 + (0.84 * i) / 10),
+    side,
+    label: `${i + 1}`,
+  }));
+
+const initialBall = (): Player => ({
+  id: 'ball',
+  x: BOARD_W * 0.5,
+  y: BOARD_H * 0.5,
+  side: 'ball',
+  label: '⚽',
+});
+
+export default function App() {
+  const shotRef = useRef<View>(null);
+  const [mode, setMode] = useState<"draw" | "move">("move");
+  const [color, setColor] = useState("#ff3b30");
+  const [widthPx, setWidthPx] = useState(4);
+  const [home, setHome] = useState(initialPlayers("home"));
+  const [away, setAway] = useState(initialPlayers("away"));
+  const [ball, setBall] = useState(initialBall());
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [redoStack, setRedoStack] = useState<Stroke[]>([]);
+  const [current, setCurrent] = useState<Stroke | null>(null);
+  
+  // 새로운 상태들
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  
+  // Shared values for animations
+  const selectedSharedValue = useSharedValue<string | null>(null);
+
+  // 유틸리티 함수들
+  const allPlayers = [...home, ...away, ball];
+  
+  const findNearestPlayer = (x: number, y: number) => {
+    return allPlayers.reduce(
+      (best, cur) => {
+        const d = (cur.x - x) ** 2 + (cur.y - y) ** 2;
+        return d < 1600 && d < best.dist ? { player: cur, dist: d } : best; // 40px 반경
+      },
+      { player: null as Player | null, dist: Infinity }
+    ).player;
+  };
+
+  const movePlayer = (playerId: string, x: number, y: number) => {
+    if (playerId === 'ball') {
+      setBall(prev => ({ ...prev, x, y }));
+    } else {
+      setHome(arr => arr.map(pl => pl.id === playerId ? { ...pl, x, y } : pl));
+      setAway(arr => arr.map(pl => pl.id === playerId ? { ...pl, x, y } : pl));
+    }
+  };
+
+  const openTextEditor = (playerId: string) => {
+    if (playerId === 'ball') return; // 볼은 편집 불가
+    const player = allPlayers.find(p => p.id === playerId);
+    if (player) {
+      setEditText(player.label);
+      setEditingPlayer(playerId);
+    }
+  };
+
+  const saveTextEdit = () => {
+    if (!editingPlayer) return;
+    setHome(arr => arr.map(pl => pl.id === editingPlayer ? { ...pl, label: editText } : pl));
+    setAway(arr => arr.map(pl => pl.id === editingPlayer ? { ...pl, label: editText } : pl));
+    setEditingPlayer(null);
+    setEditText("");
+  };
+
+  // 드로잉 헬퍼 함수들
+  const startDrawing = (point: Point) => {
+    const newStroke = { color, width: widthPx, points: [point] };
+    setCurrent(newStroke);
+    setRedoStack([]);
+  };
+
+  const updateDrawing = (point: Point) => {
+    setCurrent(currentStroke => 
+      currentStroke ? {
+        ...currentStroke,
+        points: [...currentStroke.points, point],
+      } : null
+    );
+  };
+
+  const finishDrawing = () => {
+    setCurrent(currentStroke => {
+      if (currentStroke && currentStroke.points.length > 1) {
+        setStrokes(prev => [...prev, currentStroke]);
+      }
+      return null;
+    });
+  };
+
+  // 드로잉 제스처
+  const drawPan = Gesture.Pan()
+    .enabled(mode === "draw")
+    .onStart((e) => {
+      runOnJS(startDrawing)({ x: e.x, y: e.y });
+    })
+    .onUpdate((e) => {
+      runOnJS(updateDrawing)({ x: e.x, y: e.y });
+    })
+    .onEnd(() => {
+      runOnJS(finishDrawing)();
+    });
+
+  // 터치 제스처 (탭-투-셀렉트)
+  const tap = Gesture.Tap()
+    .enabled(mode === "move")
+    .onStart((e) => {
+      const { x, y } = e;
+      const nearest = findNearestPlayer(x, y);
+      if (nearest) {
+        setSelectedId(nearest.id);
+        selectedSharedValue.value = nearest.id;
+      } else if (selectedId) {
+        movePlayer(selectedId, x, y);
+        setSelectedId(null);
+        selectedSharedValue.value = null;
+      }
+    });
+
+  // 더블탭 제스처 (텍스트 편집)
+  const doubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .onStart((e) => {
+      const player = findNearestPlayer(e.x, e.y);
+      if (player) {
+        openTextEditor(player.id);
+      }
+    });
+
+  const composedGesture = Gesture.Exclusive(drawPan, doubleTap, tap);
+
+  const undo = () => {
+    setStrokes((s) => {
+      if (s.length === 0) return s;
+      const last = s[s.length - 1];
+      setRedoStack((r) => [...r, last]);
+      return s.slice(0, -1);
+    });
+  };
+  const redo = () => {
+    setRedoStack((r) => {
+      if (r.length === 0) return r;
+      const last = r[r.length - 1];
+      setStrokes((s) => [...s, last]);
+      return r.slice(0, -1);
+    });
+  };
+
+  const saveBoard = async () => {
+    const data = { home, away, ball, strokes };
+    await AsyncStorage.setItem("@tactics:last", JSON.stringify(data));
+  };
+  const loadBoard = async () => {
+    const raw = await AsyncStorage.getItem("@tactics:last");
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    setHome(data.home ?? initialPlayers("home"));
+    setAway(data.away ?? initialPlayers("away"));
+    setBall(data.ball ?? initialBall());
+    setStrokes(data.strokes ?? []);
+    setRedoStack([]);
+    setSelectedId(null);
+  };
+
+  const sharePng = async () => {
+    if (!shotRef.current) return;
+    const uri = await captureRef(shotRef, { format: "png", quality: 1 });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri);
+    }
+  };
+
+  return (
+    <GestureHandlerRootView style={styles.root}>
+      {/* 툴바 */}
+      <View style={styles.toolbar}>
+        <Btn
+          onPress={() => setMode("move")}
+          active={mode === "move"}
+          label="이동"
+        />
+        <Btn
+          onPress={() => setMode("draw")}
+          active={mode === "draw"}
+          label="펜"
+        />
+        <Btn onPress={undo} label="Undo" />
+        <Btn onPress={redo} label="Redo" />
+        <Btn onPress={sharePng} label="Export" />
+        <Btn onPress={saveBoard} label="Save" />
+        <Btn onPress={loadBoard} label="Load" />
+      </View>
+
+      {/* 색/두께 */}
+      <View style={styles.subbar}>
+        {["#ff3b30", "#34c759", "#0a84ff"].map((c) => (
+          <TouchableOpacity
+            key={c}
+            onPress={() => setColor(c)}
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: c, borderWidth: color === c ? 2 : 0 },
+            ]}
+          />
+        ))}
+        {[3, 5, 8].map((w) => (
+          <TouchableOpacity
+            key={w}
+            onPress={() => setWidthPx(w)}
+            style={[
+              styles.widthDot,
+              {
+                width: w * 2,
+                height: w * 2,
+                borderWidth: widthPx === w ? 2 : 0,
+              },
+            ]}
+          />
+        ))}
+      </View>
+
+      {/* 보드 영역 */}
+      <GestureDetector gesture={composedGesture}>
+        <Animated.View ref={shotRef} style={styles.board}>
+          {/* 잔디/라인 간단 렌더 */}
+          <Pitch />
+
+          {/* 이미 그린 선 */}
+          <SvgOverlay strokes={strokes} />
+          {/* 현재 그리고 있는 선 */}
+          {current && <SvgOverlay strokes={[current]} />}
+
+          {/* 말(토큰) */}
+          {allPlayers.map((p) => (
+            <Token 
+              key={p.id} 
+              player={p} 
+              isSelected={selectedId === p.id}
+            />
+          ))}
+        </Animated.View>
+      </GestureDetector>
+
+      {/* 텍스트 편집 모달 */}
+      <Modal
+        visible={editingPlayer !== null}
+        transparent
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>선수 번호/이름 편집</Text>
+            <TextInput
+              style={styles.textInput}
+              value={editText}
+              onChangeText={setEditText}
+              placeholder="번호 또는 이름 입력"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setEditingPlayer(null)}
+              >
+                <Text style={styles.buttonText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={saveTextEdit}
+              >
+                <Text style={styles.buttonText}>저장</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </GestureHandlerRootView>
+  );
+}
+
+function Pitch() {
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0b5d17" }]} />
+      {/* 바운더리 */}
+      <View style={[styles.line, { left: 8, right: 8, top: 8, bottom: 8 }]} />
+      {/* 하프라인 */}
+      <View
+        style={[
+          styles.line,
+          { left: 8, right: 8, top: BOARD_H / 2, height: 2 },
+        ]}
+      />
+      {/* 센터써클(간이) */}
+      <View
+        style={{
+          position: "absolute",
+          left: BOARD_W / 2 - 36,
+          top: BOARD_H / 2 - 36,
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          borderWidth: 2,
+          borderColor: "white",
+        }}
+      />
+    </View>
+  );
+}
+
+function SvgOverlay({ strokes }: { strokes: Stroke[] }) {
+  // SVG 없이 뷰로 빠르게: 세그먼트별 작은 View를 이어 그리기(미니멀)
+  // *진짜 예쁘게 하려면 react-native-svg 사용 권장*
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {strokes.flatMap((s, i) =>
+        s.points.slice(1).map((p, j) => {
+          const a = s.points[j];
+          const b = p;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+          return (
+            <View
+              key={`${i}-${j}`}
+              style={{
+                position: "absolute",
+                left: a.x,
+                top: a.y,
+                width: len,
+                height: s.width,
+                backgroundColor: s.color,
+                transform: [{ rotateZ: `${angle}deg` }],
+                borderRadius: s.width / 2,
+              }}
+            />
+          );
+        })
+      )}
+    </View>
+  );
+}
+
+function Token({ player, isSelected }: { player: Player; isSelected: boolean }) {
+  const getTokenStyle = () => {
+    switch (player.side) {
+      case 'home':
+        return { backgroundColor: "#0a84ff" };
+      case 'away':
+        return { backgroundColor: "#ff9f0a" };
+      case 'ball':
+        return { backgroundColor: "#fff", fontSize: 18 };
+      default:
+        return {};
+    }
+  };
+
+  return (
+    <View
+      style={[
+        styles.token,
+        {
+          left: player.x - 16,
+          top: player.y - 16,
+          ...getTokenStyle(),
+          borderWidth: isSelected ? 3 : 0,
+          borderColor: isSelected ? "#00ff00" : "transparent",
+        },
+      ]}
+    >
+      <Text style={[
+        styles.tokenText,
+        player.side === 'ball' && { fontSize: 18 }
+      ]}>
+        {player.label}
+      </Text>
+    </View>
+  );
+}
+
+function Btn({
+  onPress,
+  label,
+  active,
+}: {
+  onPress: () => void;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.btn,
+        active && { backgroundColor: "#222", borderColor: "#fff" },
+      ]}
+    >
+      <Text style={{ color: "white", fontWeight: "600" }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#111", paddingTop: 32 },
+  toolbar: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  subbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  board: {
+    width: BOARD_W,
+    height: BOARD_H,
+    alignSelf: "center",
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#0b5d17",
+  },
+  btn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#333",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#555",
+  },
+  colorSwatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderColor: "white",
+  },
+  widthDot: { borderColor: "white", borderRadius: 999 },
+  token: {
+    position: "absolute",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tokenText: { color: "white", fontWeight: "700" },
+  line: {
+    position: "absolute",
+    borderColor: "white",
+    borderWidth: 2,
+    borderRadius: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 24,
+    width: "80%",
+    maxWidth: 320,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#ccc",
+  },
+  saveButton: {
+    backgroundColor: "#007AFF",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "600",
+  },
+});
