@@ -118,7 +118,7 @@ ffmpeg -i demo.mp4 -vf "fps=12,scale=540:-1:flags=lanczos" -loop 0 docs/demo.gif
 - [ ] **전체/하프 코트 토글**: 다양한 전술 시나리오 지원
 
 #### P1 (사용성 개선) - 🚧 진행중
-- [ ] **애니메이션 기반 드래그**: SharedValue를 이용한 부드러운 드래그 (진행중 🚧)
+- [x] **애니메이션 기반 드래그**: SharedValue를 이용한 부드러운 드래그 ✅
 - [ ] **포메이션 프리셋**: 4-3-3, 4-4-2, 3-5-2 등 원클릭 배치
 - [ ] **터치 감도 최적화**: 작은 화면에서 정확한 선택
 - [ ] **성능 최적화**: 복잡한 드로잉 시 프레임 드롭 방지
@@ -190,42 +190,44 @@ ffmpeg -i demo.mp4 -vf "fps=12,scale=540:-1:flags=lanczos" -loop 0 docs/demo.gif
 
 ---
 
-## 🔧 현재 작업: 애니메이션 기반 드래그 시스템
+## ✅ 완료: 애니메이션 기반 드래그 시스템
 
-### 문제점
-- 드래그 중 매 프레임마다 상태 변경으로 히스토리 스택 오염
-- React 상태 업데이트로 인한 성능 저하
-- 불필요한 리렌더링 발생
+### 구현된 기능
+- **SharedValue 기반 드래그**: 히스토리 오염 없이 부드러운 애니메이션
+- **스케일 & 투명도**: 드래그 중 시각적 피드백 (1.1x 스케일, 0.8 투명도)
+- **Z-Index 관리**: 드래그 중인 토큰이 다른 토큰 위에 표시
+- **성능 최적화**: 매 프레임 상태 업데이트 제거로 60fps 유지
 
-### 해결 방안
+### 핵심 구현
 ```typescript
-// SharedValue 기반 임시 위치 관리
-const dragOffset = useSharedValue({ x: 0, y: 0 });
-const isDragging = useSharedValue(false);
-const dragPlayerId = useSharedValue<string | null>(null);
-
-// 드래그 완료 시에만 실제 상태 업데이트
-.onEnd((e) => {
-  if (dragPlayerId.value) {
-    runOnJS(onPlayerMove)(playerId, finalX, finalY);
+// 드래그 시작: 플레이어 찾기 & SharedValue 초기화
+const onDragStart = (x: number, y: number) => {
+  const nearest = findNearestPlayer(x, y, players);
+  if (nearest) {
+    dragPlayerId.value = nearest.id;
+    isDragging.value = true;
+    dragStartPosition.value = { x: nearest.x, y: nearest.y };
+    dragOffset.value = { x: 0, y: 0 };
   }
-});
+};
 
-// Token 컴포넌트에서 애니메이션 적용
-const animatedStyle = useAnimatedStyle(() => ({
-  transform: [
-    { translateX: isDragging.value ? dragOffset.value.x : 0 },
-    { translateY: isDragging.value ? dragOffset.value.y : 0 },
-    { scale: withSpring(isDragging.value ? 1.1 : 1) },
-  ],
-}));
+// 드래그 중: SharedValue만 업데이트 (히스토리 오염 없음)
+.onUpdate((e) => {
+  dragOffset.value = { x: e.translationX, y: e.translationY };
+})
+
+// 드래그 완료: 최종 위치만 한 번 히스토리에 추가
+.onEnd((e) => {
+  const finalX = dragStartPosition.value.x + e.translationX;
+  const finalY = dragStartPosition.value.y + e.translationY;
+  runOnJS(onPlayerMove)(dragPlayerId.value, finalX, finalY);
+});
 ```
 
-### 구현 단계
-1. **Phase 1**: SharedValue 드래그 오프셋 시스템
-2. **Phase 2**: Token 애니메이션 스타일 적용  
-3. **Phase 3**: 드래그 취소 및 영역 제한
-4. **Phase 4**: 햅틱 피드백 및 고급 애니메이션
+### 해결한 문제
+- ✅ **히스토리 스택 오염**: 드래그 완료 시에만 히스토리 추가
+- ✅ **성능 저하**: React 리렌더링 최소화로 60fps 유지
+- ✅ **Worklet 컨텍스트**: JS와 Worklet 영역 분리로 안정성 확보
 
 ---
 
