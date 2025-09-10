@@ -38,7 +38,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   const board = useBoardState();
 
   // 제스처 핸들러
-  const { composedGesture } = useGestures({
+  const { composedGesture, dragOffset, isDragging, dragPlayerId } = useGestures({
     mode,
     color,
     width: widthPx,
@@ -210,6 +210,9 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         currentStroke={board.currentStroke}
         selectedId={board.selectedId}
         gesture={composedGesture}
+        dragOffset={dragOffset}
+        isDragging={isDragging}
+        dragPlayerId={dragPlayerId}
       />
 
       <TextEditModal

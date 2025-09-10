@@ -1,5 +1,6 @@
 import { COLORS, TOKEN_RADIUS, TOKEN_SIZE } from "../../utils/constants";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
+import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import { Player } from "../../types";
 import React from "react";
@@ -7,9 +8,18 @@ import React from "react";
 interface TokenProps {
   player: Player;
   isSelected: boolean;
+  dragOffset?: any;
+  isDragging?: any;
+  dragPlayerId?: any;
 }
 
-export default function Token({ player, isSelected }: TokenProps) {
+export default function Token({ 
+  player, 
+  isSelected, 
+  dragOffset, 
+  isDragging, 
+  dragPlayerId 
+}: TokenProps) {
   const getTokenStyle = () => {
     switch (player.side) {
       case "home":
@@ -23,8 +33,32 @@ export default function Token({ player, isSelected }: TokenProps) {
     }
   };
 
+  // 드래그 애니메이션 스타일
+  const animatedStyle = useAnimatedStyle(() => {
+    const isBeingDragged = isDragging?.value && dragPlayerId?.value === player.id;
+    
+    return {
+      transform: [
+        {
+          translateX: isBeingDragged ? dragOffset?.value?.x || 0 : 0,
+        },
+        {
+          translateY: isBeingDragged ? dragOffset?.value?.y || 0 : 0,
+        },
+        {
+          scale: withSpring(isBeingDragged ? 1.1 : 1, {
+            damping: 20,
+            stiffness: 300,
+          }),
+        },
+      ],
+      zIndex: isBeingDragged ? 100 : 1,
+      opacity: isBeingDragged ? 0.8 : 1,
+    };
+  });
+
   return (
-    <View
+    <Animated.View
       style={[
         styles.token,
         {
@@ -34,6 +68,7 @@ export default function Token({ player, isSelected }: TokenProps) {
           borderWidth: isSelected ? 3 : 0,
           borderColor: isSelected ? COLORS.SELECTED : "transparent",
         },
+        animatedStyle,
       ]}
     >
       <Text
@@ -41,7 +76,7 @@ export default function Token({ player, isSelected }: TokenProps) {
       >
         {player.label}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 

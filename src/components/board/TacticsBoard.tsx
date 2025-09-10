@@ -14,6 +14,9 @@ interface TacticsBoardProps {
   currentStroke: Stroke | null;
   selectedId: string | null;
   gesture: any;
+  dragOffset?: any;
+  isDragging?: any;
+  dragPlayerId?: any;
 }
 
 export default function TacticsBoard({ 
@@ -21,7 +24,10 @@ export default function TacticsBoard({
   strokes, 
   currentStroke, 
   selectedId, 
-  gesture 
+  gesture,
+  dragOffset,
+  isDragging,
+  dragPlayerId
 }: TacticsBoardProps) {
   return (
     <GestureDetector gesture={gesture}>
@@ -34,6 +40,9 @@ export default function TacticsBoard({
             key={player.id} 
             player={player} 
             isSelected={selectedId === player.id}
+            dragOffset={dragOffset}
+            isDragging={isDragging}
+            dragPlayerId={dragPlayerId}
           />
         ))}
       </Animated.View>
