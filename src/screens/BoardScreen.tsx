@@ -1,6 +1,4 @@
-import * as Sharing from "expo-sharing";
-
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View, Text } from "react-native";
 import { BoardData, Mode } from "../types";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -14,9 +12,9 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import TacticsBoard from "../components/board/TacticsBoard";
 import TextEditModal from "../components/ui/TextEditModal";
 import Toolbar from "../components/ui/Toolbar";
-import { captureRef } from "react-native-view-shot";
 import { useBoardState } from "../hooks/useBoardState";
 import { useGestures } from "../hooks/useGestures";
+import Button from "../components/ui/Button";
 
 type BoardScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, "Board">;
@@ -25,7 +23,6 @@ type BoardScreenProps = {
 
 export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   const { boardId } = route.params;
-  const shotRef = useRef<View>(null);
   const [mode, setMode] = useState<Mode>("move");
   const [color, setColor] = useState(COLORS.RED);
   const [widthPx, setWidthPx] = useState(4);
@@ -92,10 +89,42 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
     setEditText("");
   };
 
-  // 저장/불러오기
+  // 저장 (덮어쓰기)
   const handleSave = async () => {
+    if (!boardId) {
+      // 새 보드인 경우 다른 이름으로 저장
+      handleSaveAs();
+      return;
+    }
+
+    const boardData: BoardData = {
+      home: board.home,
+      away: board.away,
+      ball: board.ball,
+      strokes: board.strokes,
+    };
+
+    try {
+      await AsyncStorage.setItem(
+        `board_${boardId}`,
+        JSON.stringify({
+          id: boardId,
+          name: boardName,
+          timestamp: Date.now(),
+          data: boardData,
+        })
+      );
+      Alert.alert("저장 완료", "전술판이 성공적으로 저장되었습니다.");
+    } catch (error) {
+      console.error("저장 실패:", error);
+      Alert.alert("저장 실패", "전술판 저장 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 다른 이름으로 저장
+  const handleSaveAs = async () => {
     Alert.prompt(
-      "전술판 저장",
+      "다른 이름으로 저장",
       "전술판 이름을 입력하세요",
       [
         { text: "취소", style: "cancel" },
@@ -104,7 +133,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
           onPress: async (name) => {
             if (!name?.trim()) return;
 
-            const id = boardId || Date.now().toString();
+            const newId = Date.now().toString();
             const boardData: BoardData = {
               home: board.home,
               away: board.away,
@@ -114,16 +143,18 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
 
             try {
               await AsyncStorage.setItem(
-                `board_${id}`,
+                `board_${newId}`,
                 JSON.stringify({
-                  id,
+                  id: newId,
                   name: name.trim(),
                   timestamp: Date.now(),
                   data: boardData,
                 })
               );
               setBoardName(name.trim());
-              Alert.alert("저장 완료", "전술판이 성공적으로 저장되었습니다.");
+              // boardId를 업데이트해서 이후 저장시 덮어쓰기되도록
+              navigation.setParams({ boardId: newId });
+              Alert.alert("저장 완료", "전술판이 새 이름으로 저장되었습니다.");
             } catch (error) {
               console.error("저장 실패:", error);
               Alert.alert("저장 실패", "전술판 저장 중 오류가 발생했습니다.");
@@ -140,30 +171,26 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
     navigation.navigate("Home");
   };
 
-  // PNG 공유
-  const sharePng = async () => {
-    if (!shotRef.current) return;
-    try {
-      const uri = await captureRef(shotRef, { format: "png", quality: 1 });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri);
-      }
-    } catch (error) {
-      console.error("공유 실패:", error);
-      Alert.alert("공유 실패", "이미지 공유 중 오류가 발생했습니다.");
-    }
-  };
 
   return (
     <SafeAreaView style={styles.root}>
+      <View style={styles.header}>
+        <Button
+          onPress={() => navigation.navigate("Home")}
+          icon="arrow-back"
+          size="small"
+        />
+        <Text style={styles.title}>{boardName}</Text>
+      </View>
+      
       <Toolbar
         mode={mode}
         onModeChange={setMode}
         onUndo={board.undo}
         onRedo={board.redo}
         onReset={board.reset}
-        onExport={sharePng}
         onSave={handleSave}
+        onSaveAs={handleSaveAs}
         onLoad={handleLoad}
         canUndo={board.canUndo}
         canRedo={board.canRedo}
@@ -177,15 +204,13 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         />
       )}
 
-      <View ref={shotRef}>
-        <TacticsBoard
-          players={board.allPlayers}
-          strokes={board.strokes}
-          currentStroke={board.currentStroke}
-          selectedId={board.selectedId}
-          gesture={composedGesture}
-        />
-      </View>
+      <TacticsBoard
+        players={board.allPlayers}
+        strokes={board.strokes}
+        currentStroke={board.currentStroke}
+        selectedId={board.selectedId}
+        gesture={composedGesture}
+      />
 
       <TextEditModal
         visible={editingPlayer !== null}
@@ -202,5 +227,18 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#111",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 12,
+  },
+  title: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
   },
 });

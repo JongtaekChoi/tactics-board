@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import { Mode } from '../../types';
 import Button from './Button';
 
@@ -9,8 +9,8 @@ interface ToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onReset: () => void;
-  onExport: () => void;
   onSave: () => void;
+  onSaveAs: () => void;
   onLoad: () => void;
   canUndo: boolean;
   canRedo: boolean;
@@ -22,8 +22,8 @@ export default function Toolbar({
   onUndo,
   onRedo,
   onReset,
-  onExport,
   onSave,
+  onSaveAs,
   onLoad,
   canUndo,
   canRedo,
@@ -33,20 +33,21 @@ export default function Toolbar({
       <Button
         onPress={() => onModeChange("move")}
         active={mode === "move"}
+        icon="move"
         label="이동"
       />
       <Button
         onPress={() => onModeChange("draw")}
         active={mode === "draw"}
+        icon="pencil"
         label="펜"
       />
-      <Button onPress={onUndo} label="Undo" disabled={!canUndo} />
-      <Button onPress={onRedo} label="Redo" disabled={!canRedo} />
-      <Button onPress={onReset} label="Reset" />
-      {/* TODO: Export 기능 디버깅 필요 - 현재 동작 불안정 */}
-      {/* <Button onPress={onExport} label="Export" /> */}
-      <Button onPress={onSave} label="Save" />
-      <Button onPress={onLoad} label="Load" />
+      <Button onPress={onUndo} icon="arrow-undo" disabled={!canUndo} />
+      <Button onPress={onRedo} icon="arrow-redo" disabled={!canRedo} />
+      <Button onPress={onReset} icon="refresh" />
+      <Button onPress={onSave} icon="save" />
+      <Button onPress={onSaveAs} icon="copy" />
+      <Button onPress={onLoad} icon="folder-open" />
     </View>
   );
 }
