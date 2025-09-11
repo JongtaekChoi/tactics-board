@@ -14,6 +14,7 @@ import TextEditModal from "../components/ui/TextEditModal";
 import Toolbar from "../components/ui/Toolbar";
 import { useBoardState } from "../hooks/useBoardState";
 import { useGestures } from "../hooks/useGestures";
+import { createPlayersFromConfig } from "../utils/helpers";
 import Button from "../components/ui/Button";
 
 type BoardScreenProps = {
@@ -22,7 +23,7 @@ type BoardScreenProps = {
 };
 
 export default function BoardScreen({ navigation, route }: BoardScreenProps) {
-  const { boardId } = route.params;
+  const { boardId, teamConfig } = route.params;
   const [mode, setMode] = useState<Mode>("move");
   const [color, setColor] = useState(COLORS.RED);
   const [widthPx, setWidthPx] = useState(4);
@@ -53,8 +54,18 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   });
 
   useEffect(() => {
-    loadBoard();
-  }, [boardId]);
+    if (boardId) {
+      loadBoard();
+    } else {
+      // 새 보드인 경우 teamConfig로 초기화
+      initializeNewBoard();
+    }
+  }, [boardId, teamConfig]);
+
+  const initializeNewBoard = () => {
+    const { home, away, ball } = createPlayersFromConfig(teamConfig);
+    board.loadFromData(home, away, ball, []);
+  };
 
   const loadBoard = async () => {
     if (!boardId) return;

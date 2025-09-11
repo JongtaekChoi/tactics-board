@@ -1,14 +1,31 @@
 import { Player } from '../types';
+import { TeamSetupConfig } from '../types/navigation';
 import { BOARD_WIDTH, BOARD_HEIGHT, SELECTION_RADIUS } from './constants';
 
-export const initialPlayers = (side: "home" | "away"): Player[] =>
-  Array.from({ length: 11 }).map((_, i) => ({
+export const initialPlayers = (side: "home" | "away", count: number = 11): Player[] =>
+  Array.from({ length: count }).map((_, i) => ({
     id: `${side}-${i + 1}`,
     x: side === "home" ? BOARD_WIDTH * 0.25 : BOARD_WIDTH * 0.75,
-    y: BOARD_HEIGHT * (0.08 + (0.84 * i) / 10),
+    y: BOARD_HEIGHT * (0.08 + (0.84 * i) / (count - 1)),
     side,
     label: `${i + 1}`,
   }));
+
+export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player[]; away: Player[]; ball: Player } => {
+  const { teamSelection, playerCount } = config;
+  
+  const home = (teamSelection === 'home-only' || teamSelection === 'both-teams') 
+    ? initialPlayers('home', playerCount) 
+    : [];
+  
+  const away = (teamSelection === 'away-only' || teamSelection === 'both-teams') 
+    ? initialPlayers('away', playerCount) 
+    : [];
+  
+  const ball = initialBall();
+  
+  return { home, away, ball };
+};
 
 export const initialBall = (): Player => ({
   id: 'ball',

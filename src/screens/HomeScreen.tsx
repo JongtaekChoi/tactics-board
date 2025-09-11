@@ -47,11 +47,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const createNewBoard = () => {
-    navigation.navigate('Board', { boardId: undefined });
+    navigation.navigate('TeamSetup', { boardId: undefined });
   };
 
   const openBoard = (board: SavedBoard) => {
-    navigation.navigate('Board', { boardId: board.id });
+    // 기존 보드는 기본 설정으로 열기
+    const defaultConfig = {
+      teamSelection: 'both-teams' as const,
+      playerCount: 11 as const,
+      scenario: 'free' as const,
+    };
+    navigation.navigate('Board', { boardId: board.id, teamConfig: defaultConfig });
   };
 
   const deleteBoard = async (boardId: string) => {

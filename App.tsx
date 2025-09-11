@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { RootStackParamList } from './src/types/navigation';
 import HomeScreen from './src/screens/HomeScreen';
+import TeamSetupScreen from './src/screens/TeamSetupScreen';
 import BoardScreen from './src/screens/BoardScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -24,6 +25,10 @@ export default function App() {
           <Stack.Screen 
             name="Home" 
             component={HomeScreen}
+          />
+          <Stack.Screen 
+            name="TeamSetup" 
+            component={TeamSetupScreen}
           />
           <Stack.Screen 
             name="Board" 

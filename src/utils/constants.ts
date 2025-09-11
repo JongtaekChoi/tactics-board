@@ -9,6 +9,7 @@ export const COLORS = {
   RED: "#ff3b30",
   GREEN: "#34c759",
   BLUE: "#0a84ff",
+  PRIMARY: "#0a84ff",
   HOME_TEAM: "#0a84ff",
   AWAY_TEAM: "#ff9f0a",
   BALL_BACKGROUND: "#fff0",

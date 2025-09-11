@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../../utils/constants';
 
 interface ButtonProps {
   onPress: () => void;
@@ -9,6 +10,9 @@ interface ButtonProps {
   active?: boolean;
   disabled?: boolean;
   size?: 'small' | 'medium';
+  variant?: 'primary' | 'secondary' | 'default';
+  style?: ViewStyle;
+  children?: React.ReactNode;
 }
 
 export default function Button({ 
@@ -17,9 +21,32 @@ export default function Button({
   icon, 
   active, 
   disabled, 
-  size = 'medium' 
+  size = 'medium',
+  variant = 'default',
+  style,
+  children
 }: ButtonProps) {
   const isSmall = size === 'small';
+  
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'primary':
+        return {
+          backgroundColor: COLORS.PRIMARY,
+          borderColor: COLORS.PRIMARY,
+        };
+      case 'secondary':
+        return {
+          backgroundColor: 'transparent',
+          borderColor: '#555',
+        };
+      default:
+        return {
+          backgroundColor: "#333",
+          borderColor: "#555",
+        };
+    }
+  };
   
   return (
     <TouchableOpacity
@@ -28,8 +55,10 @@ export default function Button({
       style={[
         styles.btn,
         isSmall && styles.btnSmall,
+        getVariantStyle(),
         active && { backgroundColor: "#222", borderColor: "#fff" },
         disabled && { backgroundColor: "#1a1a1a", borderColor: "#333" },
+        style,
       ]}
     >
       <View style={styles.content}>
@@ -49,6 +78,7 @@ export default function Button({
             {label}
           </Text>
         )}
+        {children}
       </View>
     </TouchableOpacity>
   );
