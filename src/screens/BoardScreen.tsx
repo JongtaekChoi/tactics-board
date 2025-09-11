@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../utils/constants";
 import ColorPicker from "../components/ui/ColorPicker";
-import { RootStackParamList } from "../types/navigation";
+import { RootStackParamList, TeamSetupConfig } from "../types/navigation";
 import { RouteProp } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -30,6 +30,10 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   const [boardName, setBoardName] = useState(
     `전술판 ${new Date().toLocaleDateString()}`
   );
+
+  // 스마트 리셋을 위한 초기 상태 저장
+  const [initialState, setInitialState] = useState<BoardData | null>(null);
+  const [currentTeamConfig] = useState<TeamSetupConfig>(teamConfig);
 
   // 텍스트 편집 상태
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
@@ -63,8 +67,16 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   }, [boardId, teamConfig]);
 
   const initializeNewBoard = () => {
-    const { home, away, ball } = createPlayersFromConfig(teamConfig);
+    const { home, away, ball } = createPlayersFromConfig(currentTeamConfig);
     board.loadFromData(home, away, ball, []);
+    
+    // 새 보드의 경우 초기 상태를 TeamSetup 설정으로 저장
+    setInitialState({
+      home,
+      away,
+      ball,
+      strokes: []
+    });
   };
 
   const loadBoard = async () => {
@@ -77,6 +89,14 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
           JSON.parse(savedData);
         setBoardName(name);
         board.loadFromData(data.home, data.away, data.ball, data.strokes);
+        
+        // 저장된 보드의 경우 로드된 상태를 초기 상태로 저장
+        setInitialState({
+          home: data.home,
+          away: data.away,
+          ball: data.ball,
+          strokes: data.strokes
+        });
       }
     } catch (error) {
       console.error("보드 로드 실패:", error);
@@ -182,6 +202,25 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
     navigation.navigate("Home");
   };
 
+  // 스마트 리셋: 저장된 상태 또는 초기 TeamSetup 설정으로 복원
+  const handleSmartReset = () => {
+    if (initialState) {
+      // 저장된 보드 → 마지막 저장된 상태로 복원
+      board.loadFromData(
+        initialState.home,
+        initialState.away,
+        initialState.ball,
+        initialState.strokes
+      );
+    } else {
+      // 새 보드 → TeamSetup에서 선택한 초기 전술로 복원
+      const { home, away, ball } = createPlayersFromConfig(currentTeamConfig);
+      board.loadFromData(home, away, ball, []);
+    }
+    
+    // 선택 상태 초기화
+    board.setSelectedId(null);
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -199,7 +238,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         onModeChange={setMode}
         onUndo={board.undo}
         onRedo={board.redo}
-        onReset={board.reset}
+        onReset={handleSmartReset}
         onSave={handleSave}
         onSaveAs={handleSaveAs}
         onLoad={handleLoad}
