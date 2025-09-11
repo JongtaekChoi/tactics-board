@@ -55,7 +55,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     const defaultConfig = {
       teamSelection: 'both-teams' as const,
       playerCount: 11 as const,
-      scenario: 'free' as const,
+      tacticalType: 'free' as const,
     };
     navigation.navigate('Board', { boardId: board.id, teamConfig: defaultConfig });
   };

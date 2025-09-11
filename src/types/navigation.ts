@@ -1,7 +1,9 @@
+export type TacticalType = 'free' | '4-4-2' | '4-3-3' | '3-5-2' | '4-2-3-1' | '5-3-2' | 'setpiece';
+
 export type TeamSetupConfig = {
   teamSelection: 'home-only' | 'both-teams';
   playerCount: 11 | 7 | 5 | number;
-  scenario: 'attack' | 'defense' | 'setpiece' | 'free';
+  tacticalType: TacticalType;
 };
 
 export type RootStackParamList = {

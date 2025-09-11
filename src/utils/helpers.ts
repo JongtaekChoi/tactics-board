@@ -1,5 +1,5 @@
 import { Player } from '../types';
-import { TeamSetupConfig } from '../types/navigation';
+import { TeamSetupConfig, TacticalType } from '../types/navigation';
 import { BOARD_WIDTH, BOARD_HEIGHT, SELECTION_RADIUS } from './constants';
 
 export const initialPlayers = (side: "home" | "away", count: number = 11): Player[] =>
@@ -11,60 +11,112 @@ export const initialPlayers = (side: "home" | "away", count: number = 11): Playe
     label: `${i + 1}`,
   }));
 
-// 포메이션 데이터 정의 (11명 기준, 비율로 정의)
+// 통합된 전술 시스템 - 포메이션과 전술 유형을 하나로 통합
 // 세로 축구장: 위쪽(y=0) = 상대팀, 아래쪽(y=1) = 우리팀
-
-// 시나리오별 초기 포메이션
-const SCENARIO_FORMATIONS = {
-  free: {
-    // 기본 2줄 대형 - 우리팀은 아래쪽
+export const TACTICAL_FORMATIONS = {
+  'free': {
+    name: '자유 전술',
+    description: '기본 2줄 대형',
     home: [
       [0.15, 0.85], [0.25, 0.85], [0.35, 0.85], [0.45, 0.85], [0.55, 0.85], [0.65, 0.85], [0.75, 0.85], [0.85, 0.85], // 1라인
       [0.3, 0.75], [0.5, 0.75], [0.7, 0.75] // 2라인
     ],
-    // 상대팀은 위쪽
     away: [
       [0.15, 0.15], [0.25, 0.15], [0.35, 0.15], [0.45, 0.15], [0.55, 0.15], [0.65, 0.15], [0.75, 0.15], [0.85, 0.15], // 1라인
       [0.3, 0.25], [0.5, 0.25], [0.7, 0.25] // 2라인
     ]
   },
-  attack: {
-    // 공격적 4-3-3 포메이션 - 우리팀 전진 배치
+  '4-4-2': {
+    name: '4-4-2 클래식',
+    description: '균형 잡힌 포메이션',
     home: [
-      [0.2, 0.3], [0.4, 0.3], [0.6, 0.3], [0.8, 0.3], // 공격수 라인 (전진)
-      [0.25, 0.5], [0.5, 0.5], [0.75, 0.5], // 미드필더 라인
-      [0.15, 0.7], [0.35, 0.7], [0.65, 0.7], [0.85, 0.7] // 수비수 라인
+      [0.5, 0.9],   // GK
+      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
+      [0.2, 0.55], [0.4, 0.55], [0.6, 0.55], [0.8, 0.55], // 미드필더 4명
+      [0.35, 0.35], [0.65, 0.35] // 공격수 2명
     ],
-    // 상대팀은 수비적 배치
     away: [
-      [0.25, 0.1], [0.5, 0.1], [0.75, 0.1], // 수비적 공격수
-      [0.15, 0.2], [0.35, 0.2], [0.65, 0.2], [0.85, 0.2], // 미드필더
-      [0.1, 0.3], [0.3, 0.3], [0.7, 0.3], [0.9, 0.3] // 수비수
+      [0.5, 0.1], // GK
+      [0.2, 0.25], [0.4, 0.25], [0.6, 0.25], [0.8, 0.25], // 수비수 4명
+      [0.2, 0.45], [0.4, 0.45], [0.6, 0.45], [0.8, 0.45], // 미드필더 4명
+      [0.35, 0.65], [0.65, 0.65] // 공격수 2명
     ]
   },
-  defense: {
-    // 수비적 5-3-2 포메이션 - 우리팀 깊은 배치
+  '4-3-3': {
+    name: '4-3-3 공격형',
+    description: '공격적 포메이션',
     home: [
-      [0.1, 0.85], [0.25, 0.85], [0.4, 0.85], [0.6, 0.85], [0.75, 0.85], [0.9, 0.85], // 수비수 6명
-      [0.3, 0.7], [0.5, 0.7], [0.7, 0.7], // 미드필더 3명
-      [0.4, 0.55], [0.6, 0.55] // 공격수 2명
+      [0.5, 0.9],   // GK
+      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
+      [0.3, 0.55], [0.5, 0.55], [0.7, 0.55], // 미드필더 3명
+      [0.2, 0.35], [0.5, 0.35], [0.8, 0.35] // 공격수 3명
     ],
-    // 상대팀은 공격적 배치
     away: [
-      [0.2, 0.45], [0.4, 0.45], [0.6, 0.45], [0.8, 0.45], // 공격수들 전진
-      [0.15, 0.3], [0.35, 0.3], [0.65, 0.3], [0.85, 0.3], // 미드필더
-      [0.1, 0.15], [0.3, 0.15], [0.7, 0.15], [0.9, 0.15] // 수비수
+      [0.5, 0.1], // GK
+      [0.2, 0.25], [0.4, 0.25], [0.6, 0.25], [0.8, 0.25], // 수비수 4명
+      [0.3, 0.45], [0.5, 0.45], [0.7, 0.45], // 미드필더 3명
+      [0.2, 0.65], [0.5, 0.65], [0.8, 0.65] // 공격수 3명
     ]
   },
-  setpiece: {
-    // 코너킥 상황 (우리팀이 좌하단 코너에서 킥)
+  '3-5-2': {
+    name: '3-5-2 중원형',
+    description: '중원 장악 포메이션',
+    home: [
+      [0.5, 0.9],   // GK
+      [0.3, 0.75], [0.5, 0.75], [0.7, 0.75], // 수비수 3명
+      [0.15, 0.55], [0.35, 0.55], [0.5, 0.55], [0.65, 0.55], [0.85, 0.55], // 미드필더 5명
+      [0.4, 0.35], [0.6, 0.35] // 공격수 2명
+    ],
+    away: [
+      [0.5, 0.1], // GK
+      [0.3, 0.25], [0.5, 0.25], [0.7, 0.25], // 수비수 3명
+      [0.15, 0.45], [0.35, 0.45], [0.5, 0.45], [0.65, 0.45], [0.85, 0.45], // 미드필더 5명
+      [0.4, 0.65], [0.6, 0.65] // 공격수 2명
+    ]
+  },
+  '4-2-3-1': {
+    name: '4-2-3-1 현대형',
+    description: '현대적 포메이션',
+    home: [
+      [0.5, 0.9],   // GK
+      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
+      [0.35, 0.6], [0.65, 0.6], // 수비형 미드필더 2명
+      [0.2, 0.45], [0.5, 0.45], [0.8, 0.45], // 공격형 미드필더 3명
+      [0.5, 0.3] // 스트라이커 1명
+    ],
+    away: [
+      [0.5, 0.1], // GK
+      [0.2, 0.25], [0.4, 0.25], [0.6, 0.25], [0.8, 0.25], // 수비수 4명
+      [0.35, 0.4], [0.65, 0.4], // 수비형 미드필더 2명
+      [0.2, 0.55], [0.5, 0.55], [0.8, 0.55], // 공격형 미드필더 3명
+      [0.5, 0.7] // 스트라이커 1명
+    ]
+  },
+  '5-3-2': {
+    name: '5-3-2 수비형',
+    description: '수비적 포메이션',
+    home: [
+      [0.5, 0.9],   // GK
+      [0.15, 0.75], [0.35, 0.75], [0.5, 0.75], [0.65, 0.75], [0.85, 0.75], // 수비수 5명
+      [0.3, 0.55], [0.5, 0.55], [0.7, 0.55], // 미드필더 3명
+      [0.4, 0.35], [0.6, 0.35] // 공격수 2명
+    ],
+    away: [
+      [0.5, 0.1], // GK
+      [0.15, 0.25], [0.35, 0.25], [0.5, 0.25], [0.65, 0.25], [0.85, 0.25], // 수비수 5명
+      [0.3, 0.45], [0.5, 0.45], [0.7, 0.45], // 미드필더 3명
+      [0.4, 0.65], [0.6, 0.65] // 공격수 2명
+    ]
+  },
+  'setpiece': {
+    name: '세트피스',
+    description: '코너킥 전술',
     home: [
       [0.05, 0.95], // 코너킥 키커 (좌하단)
       [0.15, 0.8], [0.25, 0.75], [0.35, 0.7], [0.3, 0.6], // 박스 근처 대기
       [0.4, 0.65], [0.5, 0.7], [0.6, 0.65], // 박스 안 헤딩 포인트
       [0.25, 0.85], [0.5, 0.85], [0.75, 0.85] // 후방 지원
     ],
-    // 상대팀은 골라인 근처 수비
     away: [
       [0.5, 0.05], // 골키퍼
       [0.2, 0.1], [0.35, 0.1], [0.65, 0.1], [0.8, 0.1], // 골라인 수비
@@ -74,65 +126,10 @@ const SCENARIO_FORMATIONS = {
   }
 };
 
-// 대표적인 축구 포메이션들 (BoardScreen에서 변경 가능)
-export const TACTICAL_FORMATIONS = {
-  '4-4-2': {
-    name: '4-4-2',
-    description: '균형 잡힌 클래식 포메이션',
-    positions: [
-      [0.5, 0.9],   // GK
-      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
-      [0.2, 0.55], [0.4, 0.55], [0.6, 0.55], [0.8, 0.55], // 미드필더 4명
-      [0.35, 0.35], [0.65, 0.35] // 공격수 2명
-    ]
-  },
-  '4-3-3': {
-    name: '4-3-3',
-    description: '공격적 포메이션',
-    positions: [
-      [0.5, 0.9],   // GK
-      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
-      [0.3, 0.55], [0.5, 0.55], [0.7, 0.55], // 미드필더 3명
-      [0.2, 0.35], [0.5, 0.35], [0.8, 0.35] // 공격수 3명
-    ]
-  },
-  '3-5-2': {
-    name: '3-5-2',
-    description: '중원 장악형',
-    positions: [
-      [0.5, 0.9],   // GK
-      [0.3, 0.75], [0.5, 0.75], [0.7, 0.75], // 수비수 3명
-      [0.15, 0.55], [0.35, 0.55], [0.5, 0.55], [0.65, 0.55], [0.85, 0.55], // 미드필더 5명
-      [0.4, 0.35], [0.6, 0.35] // 공격수 2명
-    ]
-  },
-  '4-2-3-1': {
-    name: '4-2-3-1',
-    description: '현대적 포메이션',
-    positions: [
-      [0.5, 0.9],   // GK
-      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
-      [0.35, 0.6], [0.65, 0.6], // 수비형 미드필더 2명
-      [0.2, 0.45], [0.5, 0.45], [0.8, 0.45], // 공격형 미드필더 3명
-      [0.5, 0.3] // 스트라이커 1명
-    ]
-  },
-  '5-3-2': {
-    name: '5-3-2',
-    description: '수비적 포메이션',
-    positions: [
-      [0.5, 0.9],   // GK
-      [0.15, 0.75], [0.35, 0.75], [0.5, 0.75], [0.65, 0.75], [0.85, 0.75], // 수비수 5명
-      [0.3, 0.55], [0.5, 0.55], [0.7, 0.55], // 미드필더 3명
-      [0.4, 0.35], [0.6, 0.35] // 공격수 2명
-    ]
-  }
-};
-
 export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player[]; away: Player[]; ball: Player } => {
-  const { teamSelection, playerCount, scenario } = config;
+  const { teamSelection, playerCount, tacticalType } = config;
   
-  const formation = SCENARIO_FORMATIONS[scenario] || SCENARIO_FORMATIONS.free;
+  const formation = TACTICAL_FORMATIONS[tacticalType] || TACTICAL_FORMATIONS.free;
   
   const createPositionalPlayers = (side: 'home' | 'away', count: number): Player[] => {
     const positions = formation[side];
@@ -157,14 +154,17 @@ export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player
     : [];
   
   // 전술 유형별 볼 위치 (세로 축구장 기준)
-  const ballPositions = {
+  const ballPositions: Record<TacticalType, { x: number; y: number }> = {
     free: { x: 0.5, y: 0.5 }, // 중앙
-    attack: { x: 0.5, y: 0.3 }, // 상대 진영 (위쪽)
-    defense: { x: 0.5, y: 0.7 }, // 우리 진영 (아래쪽)
+    '4-4-2': { x: 0.5, y: 0.5 }, // 중앙
+    '4-3-3': { x: 0.5, y: 0.4 }, // 약간 전진
+    '3-5-2': { x: 0.5, y: 0.5 }, // 중앙
+    '4-2-3-1': { x: 0.5, y: 0.45 }, // 약간 전진
+    '5-3-2': { x: 0.5, y: 0.6 }, // 약간 후진
     setpiece: { x: 0.02, y: 0.98 }, // 좌하단 코너
   };
   
-  const ballPos = ballPositions[scenario] || ballPositions.free;
+  const ballPos = ballPositions[tacticalType] || ballPositions.free;
   const ball = {
     id: 'ball',
     x: ballPos.x * BOARD_WIDTH,
@@ -176,21 +176,33 @@ export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player
   return { home, away, ball };
 };
 
-// 포메이션을 홈팀에 적용하는 함수
-export const applyFormationToPlayers = (
+// 전술 유형을 기존 플레이어들에게 적용하는 함수
+export const applyTacticalFormation = (
   players: Player[], 
-  formationKey: keyof typeof TACTICAL_FORMATIONS
+  tacticalType: TacticalType
 ): Player[] => {
-  const formation = TACTICAL_FORMATIONS[formationKey];
+  const formation = TACTICAL_FORMATIONS[tacticalType];
   if (!formation) return players;
 
   const homePlayers = players.filter(p => p.side === 'home');
+  const awayPlayers = players.filter(p => p.side === 'away');
   
   return players.map(player => {
-    if (player.side !== 'home') return player;
+    if (player.side === 'ball') return player;
     
-    const playerIndex = homePlayers.findIndex(p => p.id === player.id);
-    const position = formation.positions[playerIndex];
+    let positions;
+    let playerList;
+    
+    if (player.side === 'home') {
+      positions = formation.home;
+      playerList = homePlayers;
+    } else {
+      positions = formation.away;
+      playerList = awayPlayers;
+    }
+    
+    const playerIndex = playerList.findIndex(p => p.id === player.id);
+    const position = positions[playerIndex];
     
     if (position) {
       return {

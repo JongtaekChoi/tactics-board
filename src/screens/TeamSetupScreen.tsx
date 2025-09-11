@@ -24,14 +24,17 @@ const PLAYER_COUNT_OPTIONS = [
   { value: 5, label: '5 vs 5', description: '실내 축구' },
 ] as const;
 
-const SCENARIO_OPTIONS = [
-  { value: 'free', label: '자유 전술', description: '일반적인 전술보드' },
-  { value: 'attack', label: '공격 전술', description: '득점 기회 창출' },
-  { value: 'defense', label: '수비 전술', description: '실점 방지' },
-  { value: 'setpiece', label: '세트피스', description: '코너킥, 프리킥' },
+const TACTICAL_OPTIONS = [
+  { value: 'free', label: '자유 전술', description: '기본 2줄 대형' },
+  { value: '4-4-2', label: '4-4-2 클래식', description: '균형 잡힌 포메이션' },
+  { value: '4-3-3', label: '4-3-3 공격형', description: '공격적 포메이션' },
+  { value: '3-5-2', label: '3-5-2 중원형', description: '중원 장악 포메이션' },
+  { value: '4-2-3-1', label: '4-2-3-1 현대형', description: '현대적 포메이션' },
+  { value: '5-3-2', label: '5-3-2 수비형', description: '수비적 포메이션' },
+  { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
 ] as const;
 
-type SetupStep = 'team' | 'count' | 'scenario' | 'complete';
+type SetupStep = 'team' | 'count' | 'tactical' | 'complete';
 
 export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenProps) {
   const { boardId } = route.params;
@@ -40,14 +43,14 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
   const [config, setConfig] = useState<TeamSetupConfig>({
     teamSelection: 'both-teams',
     playerCount: 11,
-    scenario: 'free',
+    tacticalType: 'free',
   });
 
   // 애니메이션 values
   const countOpacity = useSharedValue(0);
   const countTranslateY = useSharedValue(30);
-  const scenarioOpacity = useSharedValue(0);
-  const scenarioTranslateY = useSharedValue(30);
+  const tacticalOpacity = useSharedValue(0);
+  const tacticalTranslateY = useSharedValue(30);
 
   const handleTeamSelection = (teamSelection: 'home-only' | 'both-teams') => {
     setConfig(prev => ({ ...prev, teamSelection }));
@@ -60,15 +63,15 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
 
   const handlePlayerCountSelection = (playerCount: number) => {
     setConfig(prev => ({ ...prev, playerCount }));
-    setCurrentStep('scenario');
+    setCurrentStep('tactical');
     
     // 전술 유형 섹션 애니메이션
-    scenarioOpacity.value = withTiming(1, { duration: 500 });
-    scenarioTranslateY.value = withSpring(0);
+    tacticalOpacity.value = withTiming(1, { duration: 500 });
+    tacticalTranslateY.value = withSpring(0);
   };
 
-  const handleScenarioSelection = (scenario: 'attack' | 'defense' | 'setpiece' | 'free') => {
-    setConfig(prev => ({ ...prev, scenario }));
+  const handleTacticalSelection = (tacticalType: 'free' | '4-4-2' | '4-3-3' | '3-5-2' | '4-2-3-1' | '5-3-2' | 'setpiece') => {
+    setConfig(prev => ({ ...prev, tacticalType }));
     setCurrentStep('complete');
   };
 
@@ -85,9 +88,9 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
     transform: [{ translateY: countTranslateY.value }],
   }));
 
-  const scenarioAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: scenarioOpacity.value,
-    transform: [{ translateY: scenarioTranslateY.value }],
+  const tacticalAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: tacticalOpacity.value,
+    transform: [{ translateY: tacticalTranslateY.value }],
   }));
 
   const OptionCard = ({ 
@@ -170,18 +173,18 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
         )}
 
         {/* Step 3: 전술 유형 (조건부 애니메이션) */}
-        {(currentStep === 'scenario' || currentStep === 'complete') && (
-          <Animated.View style={[styles.section, scenarioAnimatedStyle]}>
+        {(currentStep === 'tactical' || currentStep === 'complete') && (
+          <Animated.View style={[styles.section, tacticalAnimatedStyle]}>
             <Text style={styles.sectionTitle}>전술 유형</Text>
-            <Text style={styles.sectionDescription}>어떤 상황을 연습할까요?</Text>
+            <Text style={styles.sectionDescription}>어떤 포메이션을 사용할까요?</Text>
             <View style={styles.optionsGrid}>
-              {SCENARIO_OPTIONS.map((option) => (
+              {TACTICAL_OPTIONS.map((option) => (
                 <OptionCard
                   key={option.value}
                   title={option.label}
                   value={option.value}
-                  isSelected={config.scenario === option.value}
-                  onPress={() => handleScenarioSelection(option.value)}
+                  isSelected={config.tacticalType === option.value}
+                  onPress={() => handleTacticalSelection(option.value)}
                 />
               ))}
             </View>
