@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -15,7 +16,6 @@ type TeamSetupScreenProps = {
 const TEAM_OPTIONS = [
   { value: 'both-teams', label: '양팀 모두', description: '홈팀 vs 어웨이팀' },
   { value: 'home-only', label: '우리팀만', description: '공격 전술 연습' },
-  { value: 'away-only', label: '상대팀만', description: '상대 분석' },
 ] as const;
 
 const PLAYER_COUNT_OPTIONS = [
@@ -31,14 +31,46 @@ const SCENARIO_OPTIONS = [
   { value: 'setpiece', label: '세트피스', description: '코너킥, 프리킥' },
 ] as const;
 
+type SetupStep = 'team' | 'count' | 'scenario' | 'complete';
+
 export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenProps) {
   const { boardId } = route.params;
   
+  const [currentStep, setCurrentStep] = useState<SetupStep>('team');
   const [config, setConfig] = useState<TeamSetupConfig>({
     teamSelection: 'both-teams',
     playerCount: 11,
     scenario: 'free',
   });
+
+  // 애니메이션 values
+  const countOpacity = useSharedValue(0);
+  const countTranslateY = useSharedValue(30);
+  const scenarioOpacity = useSharedValue(0);
+  const scenarioTranslateY = useSharedValue(30);
+
+  const handleTeamSelection = (teamSelection: 'home-only' | 'both-teams') => {
+    setConfig(prev => ({ ...prev, teamSelection }));
+    setCurrentStep('count');
+    
+    // 인원 수 섹션 애니메이션
+    countOpacity.value = withTiming(1, { duration: 500 });
+    countTranslateY.value = withSpring(0);
+  };
+
+  const handlePlayerCountSelection = (playerCount: number) => {
+    setConfig(prev => ({ ...prev, playerCount }));
+    setCurrentStep('scenario');
+    
+    // 전술 유형 섹션 애니메이션
+    scenarioOpacity.value = withTiming(1, { duration: 500 });
+    scenarioTranslateY.value = withSpring(0);
+  };
+
+  const handleScenarioSelection = (scenario: 'attack' | 'defense' | 'setpiece' | 'free') => {
+    setConfig(prev => ({ ...prev, scenario }));
+    setCurrentStep('complete');
+  };
 
   const handleContinue = () => {
     navigation.navigate('Board', { 
@@ -46,6 +78,17 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
       teamConfig: config 
     });
   };
+
+  // 애니메이션 스타일
+  const countAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: countOpacity.value,
+    transform: [{ translateY: countTranslateY.value }],
+  }));
+
+  const scenarioAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: scenarioOpacity.value,
+    transform: [{ translateY: scenarioTranslateY.value }],
+  }));
 
   const OptionCard = ({ 
     title, 
@@ -90,6 +133,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Step 1: 팀 선택 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>팀 선택</Text>
           <Text style={styles.sectionDescription}>어떤 팀을 배치할까요?</Text>
@@ -100,63 +144,62 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
                 title={option.label}
                 value={option.value}
                 isSelected={config.teamSelection === option.value}
-                onPress={() => setConfig(prev => ({ 
-                  ...prev, 
-                  teamSelection: option.value 
-                }))}
+                onPress={() => handleTeamSelection(option.value)}
               />
             ))}
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>인원 수</Text>
-          <Text style={styles.sectionDescription}>경기 형태를 선택하세요</Text>
-          <View style={styles.optionsGrid}>
-            {PLAYER_COUNT_OPTIONS.map((option) => (
-              <OptionCard
-                key={option.value}
-                title={option.label}
-                value={option.value}
-                isSelected={config.playerCount === option.value}
-                onPress={() => setConfig(prev => ({ 
-                  ...prev, 
-                  playerCount: option.value 
-                }))}
-              />
-            ))}
-          </View>
-        </View>
+        {/* Step 2: 인원 수 (조건부 애니메이션) */}
+        {currentStep !== 'team' && (
+          <Animated.View style={[styles.section, countAnimatedStyle]}>
+            <Text style={styles.sectionTitle}>인원 수</Text>
+            <Text style={styles.sectionDescription}>경기 형태를 선택하세요</Text>
+            <View style={styles.optionsGrid}>
+              {PLAYER_COUNT_OPTIONS.map((option) => (
+                <OptionCard
+                  key={option.value}
+                  title={option.label}
+                  value={option.value}
+                  isSelected={config.playerCount === option.value}
+                  onPress={() => handlePlayerCountSelection(option.value)}
+                />
+              ))}
+            </View>
+          </Animated.View>
+        )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>전술 유형</Text>
-          <Text style={styles.sectionDescription}>어떤 상황을 연습할까요?</Text>
-          <View style={styles.optionsGrid}>
-            {SCENARIO_OPTIONS.map((option) => (
-              <OptionCard
-                key={option.value}
-                title={option.label}
-                value={option.value}
-                isSelected={config.scenario === option.value}
-                onPress={() => setConfig(prev => ({ 
-                  ...prev, 
-                  scenario: option.value 
-                }))}
-              />
-            ))}
-          </View>
-        </View>
+        {/* Step 3: 전술 유형 (조건부 애니메이션) */}
+        {(currentStep === 'scenario' || currentStep === 'complete') && (
+          <Animated.View style={[styles.section, scenarioAnimatedStyle]}>
+            <Text style={styles.sectionTitle}>전술 유형</Text>
+            <Text style={styles.sectionDescription}>어떤 상황을 연습할까요?</Text>
+            <View style={styles.optionsGrid}>
+              {SCENARIO_OPTIONS.map((option) => (
+                <OptionCard
+                  key={option.value}
+                  title={option.label}
+                  value={option.value}
+                  isSelected={config.scenario === option.value}
+                  onPress={() => handleScenarioSelection(option.value)}
+                />
+              ))}
+            </View>
+          </Animated.View>
+        )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Button 
-          onPress={handleContinue}
-          variant="primary"
-          style={styles.continueButton}
-        >
-          <Text style={styles.continueText}>전술보드 시작</Text>
-        </Button>
-      </View>
+      {currentStep === 'complete' && (
+        <View style={styles.footer}>
+          <Button 
+            onPress={handleContinue}
+            variant="primary"
+            style={styles.continueButton}
+          >
+            <Text style={styles.continueText}>전술보드 시작</Text>
+          </Button>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

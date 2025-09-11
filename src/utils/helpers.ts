@@ -18,7 +18,7 @@ export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player
     ? initialPlayers('home', playerCount) 
     : [];
   
-  const away = (teamSelection === 'away-only' || teamSelection === 'both-teams') 
+  const away = (teamSelection === 'both-teams') 
     ? initialPlayers('away', playerCount) 
     : [];
   

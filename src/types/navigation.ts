@@ -1,5 +1,5 @@
 export type TeamSetupConfig = {
-  teamSelection: 'home-only' | 'away-only' | 'both-teams';
+  teamSelection: 'home-only' | 'both-teams';
   playerCount: 11 | 7 | 5 | number;
   scenario: 'attack' | 'defense' | 'setpiece' | 'free';
 };
