@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tacticsboard.app"
+      "bundleIdentifier": "com.tacticsboard.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -33,8 +36,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "tactics-board-eas-project"
+        "projectId": "a10816a2-efd6-4693-bfd8-fba62ac98602"
       }
-    }
+    },
+    "owner": "lastchoi"
   }
 }
