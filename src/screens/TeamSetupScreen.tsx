@@ -24,13 +24,18 @@ const PLAYER_COUNT_OPTIONS = [
   { value: 5, label: '5 vs 5', description: '실내 축구' },
 ] as const;
 
-const TACTICAL_OPTIONS = [
+const TACTICAL_OPTIONS_11v11 = [
   { value: 'free', label: '자유 전술', description: '기본 2줄 대형' },
   { value: '4-4-2', label: '4-4-2 클래식', description: '균형 잡힌 포메이션' },
   { value: '4-3-3', label: '4-3-3 공격형', description: '공격적 포메이션' },
   { value: '3-5-2', label: '3-5-2 중원형', description: '중원 장악 포메이션' },
   { value: '4-2-3-1', label: '4-2-3-1 현대형', description: '현대적 포메이션' },
   { value: '5-3-2', label: '5-3-2 수비형', description: '수비적 포메이션' },
+  { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
+] as const;
+
+const TACTICAL_OPTIONS_OTHER = [
+  { value: 'free', label: '자유 전술', description: '기본 대형' },
   { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
 ] as const;
 
@@ -178,7 +183,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
             <Text style={styles.sectionTitle}>전술 유형</Text>
             <Text style={styles.sectionDescription}>어떤 포메이션을 사용할까요?</Text>
             <View style={styles.optionsGrid}>
-              {TACTICAL_OPTIONS.map((option) => (
+              {(config.playerCount === 11 ? TACTICAL_OPTIONS_11v11 : TACTICAL_OPTIONS_OTHER).map((option) => (
                 <OptionCard
                   key={option.value}
                   title={option.label}
