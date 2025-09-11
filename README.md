@@ -241,6 +241,16 @@ function strokeToPath(stroke: Stroke): string {
 
 ## 🚀 배포 가이드
 
+### EAS 프로젝트 설정 (최초 1회)
+```bash
+# EAS CLI 설치 및 로그인
+npm install -g eas-cli
+npx eas login
+
+# EAS 프로젝트 초기화
+npx eas project:init
+```
+
 ### EAS Build 명령어
 ```bash
 # 개발 빌드

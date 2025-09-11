@@ -33,7 +33,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "tactics-board-eas-project"
       }
     }
   }
