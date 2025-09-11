@@ -361,3 +361,26 @@ npx eas submit --platform android
 - **Conventional Commits**: feat/fix/docs 등 일관된 커밋 메시지
 - **TypeScript 엄격 모드**: 모든 컴파일 오류 해결 후 커밋
 - **성능 우선**: 60fps 유지하는 애니메이션 구현
+
+## 📁 추가 문서
+
+- **DEPLOYMENT.md**: 상세한 EAS Build 및 앱스토어 제출 가이드
+- **CHANGELOG.md**: 전체 개발 과정 및 버전별 변경사항
+- **package.json**: 모든 의존성 및 스크립트 정의
+- **eas.json**: EAS Build 프로필 설정
+- **tsconfig.json**: TypeScript 컴파일러 설정
+
+## 🎯 최종 상태 요약
+
+### ✅ 완전히 구현된 기능들
+1. **전술 설정 시스템**: 3단계 Progressive UI로 포메이션 선택
+2. **6가지 포메이션**: 실제 축구 전술 기반 선수 배치
+3. **완전한 축구장**: 골포스트, 페널티박스, 모든 라인 구현
+4. **60fps 애니메이션**: SharedValue 드래그로 부드러운 인터랙션
+5. **통합 상태 관리**: Undo/Redo + 스마트 리셋
+6. **한국어 다크테마**: 전문적 코칭 환경 UI
+7. **커스텀 앱 아이콘**: 축구 전술보드 테마
+8. **EAS 배포 설정**: 완전한 앱스토어 준비 완료
+
+**현재 빌드 ID**: `a46dfa84-feef-406b-b040-0828f7ca234d`  
+**배포 상태**: iOS 프리뷰 빌드 진행중 → 앱스토어 제출 준비 완료
