@@ -11,9 +11,11 @@ export const initialPlayers = (side: "home" | "away", count: number = 11): Playe
     label: `${i + 1}`,
   }));
 
-// 전술 유형별 포지션 정의 (11명 기준, 비율로 정의)
+// 포메이션 데이터 정의 (11명 기준, 비율로 정의)
 // 세로 축구장: 위쪽(y=0) = 상대팀, 아래쪽(y=1) = 우리팀
-const FORMATIONS = {
+
+// 시나리오별 초기 포메이션
+const SCENARIO_FORMATIONS = {
   free: {
     // 기본 2줄 대형 - 우리팀은 아래쪽
     home: [
@@ -72,10 +74,65 @@ const FORMATIONS = {
   }
 };
 
+// 대표적인 축구 포메이션들 (BoardScreen에서 변경 가능)
+export const TACTICAL_FORMATIONS = {
+  '4-4-2': {
+    name: '4-4-2',
+    description: '균형 잡힌 클래식 포메이션',
+    positions: [
+      [0.5, 0.9],   // GK
+      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
+      [0.2, 0.55], [0.4, 0.55], [0.6, 0.55], [0.8, 0.55], // 미드필더 4명
+      [0.35, 0.35], [0.65, 0.35] // 공격수 2명
+    ]
+  },
+  '4-3-3': {
+    name: '4-3-3',
+    description: '공격적 포메이션',
+    positions: [
+      [0.5, 0.9],   // GK
+      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
+      [0.3, 0.55], [0.5, 0.55], [0.7, 0.55], // 미드필더 3명
+      [0.2, 0.35], [0.5, 0.35], [0.8, 0.35] // 공격수 3명
+    ]
+  },
+  '3-5-2': {
+    name: '3-5-2',
+    description: '중원 장악형',
+    positions: [
+      [0.5, 0.9],   // GK
+      [0.3, 0.75], [0.5, 0.75], [0.7, 0.75], // 수비수 3명
+      [0.15, 0.55], [0.35, 0.55], [0.5, 0.55], [0.65, 0.55], [0.85, 0.55], // 미드필더 5명
+      [0.4, 0.35], [0.6, 0.35] // 공격수 2명
+    ]
+  },
+  '4-2-3-1': {
+    name: '4-2-3-1',
+    description: '현대적 포메이션',
+    positions: [
+      [0.5, 0.9],   // GK
+      [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], // 수비수 4명
+      [0.35, 0.6], [0.65, 0.6], // 수비형 미드필더 2명
+      [0.2, 0.45], [0.5, 0.45], [0.8, 0.45], // 공격형 미드필더 3명
+      [0.5, 0.3] // 스트라이커 1명
+    ]
+  },
+  '5-3-2': {
+    name: '5-3-2',
+    description: '수비적 포메이션',
+    positions: [
+      [0.5, 0.9],   // GK
+      [0.15, 0.75], [0.35, 0.75], [0.5, 0.75], [0.65, 0.75], [0.85, 0.75], // 수비수 5명
+      [0.3, 0.55], [0.5, 0.55], [0.7, 0.55], // 미드필더 3명
+      [0.4, 0.35], [0.6, 0.35] // 공격수 2명
+    ]
+  }
+};
+
 export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player[]; away: Player[]; ball: Player } => {
   const { teamSelection, playerCount, scenario } = config;
   
-  const formation = FORMATIONS[scenario] || FORMATIONS.free;
+  const formation = SCENARIO_FORMATIONS[scenario] || SCENARIO_FORMATIONS.free;
   
   const createPositionalPlayers = (side: 'home' | 'away', count: number): Player[] => {
     const positions = formation[side];
@@ -117,6 +174,34 @@ export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player
   };
   
   return { home, away, ball };
+};
+
+// 포메이션을 홈팀에 적용하는 함수
+export const applyFormationToPlayers = (
+  players: Player[], 
+  formationKey: keyof typeof TACTICAL_FORMATIONS
+): Player[] => {
+  const formation = TACTICAL_FORMATIONS[formationKey];
+  if (!formation) return players;
+
+  const homePlayers = players.filter(p => p.side === 'home');
+  
+  return players.map(player => {
+    if (player.side !== 'home') return player;
+    
+    const playerIndex = homePlayers.findIndex(p => p.id === player.id);
+    const position = formation.positions[playerIndex];
+    
+    if (position) {
+      return {
+        ...player,
+        x: position[0] * BOARD_WIDTH,
+        y: position[1] * BOARD_HEIGHT,
+      };
+    }
+    
+    return player;
+  });
 };
 
 export const initialBall = (): Player => ({

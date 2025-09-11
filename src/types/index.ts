@@ -22,3 +22,9 @@ export type BoardData = {
   ball: Player;
   strokes: Stroke[];
 };
+
+export type FormationInfo = {
+  name: string;
+  description: string;
+  positions: [number, number][];
+};
