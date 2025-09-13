@@ -126,10 +126,71 @@ export const TACTICAL_FORMATIONS = {
   }
 };
 
+// 인원수별 동적 포메이션 생성
+export const generateDynamicFormation = (playerCount: number): { home: number[][]; away: number[][] } => {
+  switch (playerCount) {
+    case 3:
+      return {
+        home: [[0.5, 0.9], [0.3, 0.65], [0.7, 0.65]], // 삼각형 배치
+        away: [[0.5, 0.1], [0.3, 0.35], [0.7, 0.35]]
+      };
+    case 4:
+      return {
+        home: [[0.5, 0.9], [0.3, 0.7], [0.7, 0.7], [0.5, 0.5]], // 다이아몬드
+        away: [[0.5, 0.1], [0.3, 0.3], [0.7, 0.3], [0.5, 0.5]]
+      };
+    case 5:
+      return {
+        home: [[0.5, 0.9], [0.2, 0.7], [0.5, 0.7], [0.8, 0.7], [0.5, 0.5]], // 펜타곤
+        away: [[0.5, 0.1], [0.2, 0.3], [0.5, 0.3], [0.8, 0.3], [0.5, 0.5]]
+      };
+    case 6:
+      return {
+        home: [[0.5, 0.9], [0.3, 0.7], [0.7, 0.7], [0.3, 0.5], [0.7, 0.5], [0.5, 0.3]], // 2-2-1
+        away: [[0.5, 0.1], [0.3, 0.3], [0.7, 0.3], [0.3, 0.5], [0.7, 0.5], [0.5, 0.7]]
+      };
+    case 7:
+      return {
+        home: [[0.5, 0.9], [0.25, 0.7], [0.75, 0.7], [0.25, 0.55], [0.75, 0.55], [0.4, 0.4], [0.6, 0.4]], // 풋살 2-2-2
+        away: [[0.5, 0.1], [0.25, 0.3], [0.75, 0.3], [0.25, 0.45], [0.75, 0.45], [0.4, 0.6], [0.6, 0.6]]
+      };
+    case 8:
+      return {
+        home: [[0.5, 0.9], [0.2, 0.75], [0.5, 0.75], [0.8, 0.75], [0.25, 0.55], [0.75, 0.55], [0.35, 0.35], [0.65, 0.35]], // 1-3-2-2
+        away: [[0.5, 0.1], [0.2, 0.25], [0.5, 0.25], [0.8, 0.25], [0.25, 0.45], [0.75, 0.45], [0.35, 0.65], [0.65, 0.65]]
+      };
+    case 9:
+      return {
+        home: [[0.5, 0.9], [0.2, 0.75], [0.5, 0.75], [0.8, 0.75], [0.3, 0.55], [0.7, 0.55], [0.25, 0.35], [0.5, 0.35], [0.75, 0.35]], // 1-3-2-3
+        away: [[0.5, 0.1], [0.2, 0.25], [0.5, 0.25], [0.8, 0.25], [0.3, 0.45], [0.7, 0.45], [0.25, 0.65], [0.5, 0.65], [0.75, 0.65]]
+      };
+    case 10:
+      return {
+        home: [[0.5, 0.9], [0.2, 0.75], [0.4, 0.75], [0.6, 0.75], [0.8, 0.75], [0.25, 0.55], [0.75, 0.55], [0.3, 0.35], [0.5, 0.35], [0.7, 0.35]], // 1-4-2-3
+        away: [[0.5, 0.1], [0.2, 0.25], [0.4, 0.25], [0.6, 0.25], [0.8, 0.25], [0.25, 0.45], [0.75, 0.45], [0.3, 0.65], [0.5, 0.65], [0.7, 0.65]]
+      };
+    default: // 11명
+      return TACTICAL_FORMATIONS.free;
+  }
+};
+
 export const createPlayersFromConfig = (config: TeamSetupConfig): { home: Player[]; away: Player[]; ball: Player } => {
   const { teamSelection, playerCount, tacticalType } = config;
   
-  const formation = TACTICAL_FORMATIONS[tacticalType] || TACTICAL_FORMATIONS.free;
+  // 11명인 경우 기존 포메이션 시스템 사용
+  let formation;
+  if (playerCount === 11 && TACTICAL_FORMATIONS[tacticalType]) {
+    formation = TACTICAL_FORMATIONS[tacticalType];
+  } else {
+    // 다른 인원수인 경우 동적 생성
+    const dynamicFormation = generateDynamicFormation(playerCount);
+    formation = {
+      name: `${playerCount}명 자유 전술`,
+      description: `${playerCount}명 기본 배치`,
+      home: dynamicFormation.home,
+      away: dynamicFormation.away
+    };
+  }
   
   const createPositionalPlayers = (side: 'home' | 'away', count: number): Player[] => {
     const positions = formation[side];

@@ -4,6 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, run
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import Slider from '@react-native-community/slider';
 import { RootStackParamList, TeamSetupConfig } from '../types/navigation';
 import Button from '../components/ui/Button';
 import { COLORS } from '../utils/constants';
@@ -18,11 +19,18 @@ const TEAM_OPTIONS = [
   { value: 'home-only', label: '우리팀만', description: '공격 전술 연습' },
 ] as const;
 
-const PLAYER_COUNT_OPTIONS = [
-  { value: 11, label: '11 vs 11', description: '정규 경기' },
-  { value: 7, label: '7 vs 7', description: 'Futsal / 유소년' },
-  { value: 5, label: '5 vs 5', description: '실내 축구' },
-] as const;
+// 인원수별 설명 매핑
+const PLAYER_COUNT_DESCRIPTIONS: Record<number, string> = {
+  3: '기초 드릴',
+  4: '패스 연습', 
+  5: '실내 축구',
+  6: '소그룹 연습',
+  7: 'Futsal / 유소년',
+  8: '확장 연습',
+  9: '준경기',
+  10: '거의 풀팀',
+  11: '정규 경기'
+};
 
 const TACTICAL_OPTIONS_11v11 = [
   { value: 'free', label: '자유 전술', description: '기본 2줄 대형' },
@@ -68,6 +76,16 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
 
   const handlePlayerCountSelection = (playerCount: number) => {
     setConfig(prev => ({ ...prev, playerCount }));
+    // 슬라이더는 실시간으로 업데이트되므로 바로 전술 단계로
+    if (currentStep === 'count') {
+      setCurrentStep('tactical');
+      // 전술 유형 섹션 애니메이션
+      tacticalOpacity.value = withTiming(1, { duration: 500 });
+      tacticalTranslateY.value = withSpring(0);
+    }
+  };
+
+  const handlePlayerCountConfirm = () => {
     setCurrentStep('tactical');
     
     // 전술 유형 섹션 애니메이션
@@ -158,22 +176,47 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
           </View>
         </View>
 
-        {/* Step 2: 인원 수 (조건부 애니메이션) */}
+        {/* Step 2: 인원 수 (슬라이더 UI) */}
         {currentStep !== 'team' && (
           <Animated.View style={[styles.section, countAnimatedStyle]}>
             <Text style={styles.sectionTitle}>인원 수</Text>
-            <Text style={styles.sectionDescription}>경기 형태를 선택하세요</Text>
-            <View style={styles.optionsGrid}>
-              {PLAYER_COUNT_OPTIONS.map((option) => (
-                <OptionCard
-                  key={option.value}
-                  title={option.label}
-                  value={option.value}
-                  isSelected={config.playerCount === option.value}
-                  onPress={() => handlePlayerCountSelection(option.value)}
-                />
-              ))}
+            <Text style={styles.sectionDescription}>
+              {config.playerCount}명 - {PLAYER_COUNT_DESCRIPTIONS[config.playerCount]}
+            </Text>
+            
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderLabels}>
+                <Text style={styles.sliderLabel}>3명</Text>
+                <Text style={styles.sliderLabel}>11명</Text>
+              </View>
+              
+              <Slider
+                style={styles.slider}
+                minimumValue={3}
+                maximumValue={11}
+                step={1}
+                value={config.playerCount}
+                onValueChange={handlePlayerCountSelection}
+                minimumTrackTintColor={COLORS.PRIMARY}
+                maximumTrackTintColor="#333"
+                thumbTintColor={COLORS.PRIMARY}
+              />
+              
+              <View style={styles.playerCountDisplay}>
+                <Text style={styles.playerCountNumber}>{config.playerCount}</Text>
+                <Text style={styles.playerCountUnit}>명</Text>
+              </View>
             </View>
+
+            {currentStep === 'count' && (
+              <Button
+                variant="primary"
+                onPress={handlePlayerCountConfirm}
+                style={styles.confirmButton}
+              >
+                <Text style={styles.confirmButtonText}>다음 단계</Text>
+              </Button>
+            )}
           </Animated.View>
         )}
 
@@ -280,6 +323,51 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   continueText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  sliderContainer: {
+    marginVertical: 20,
+    paddingHorizontal: 8,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sliderLabel: {
+    color: '#888',
+    fontSize: 12,
+  },
+  slider: {
+    height: 40,
+    marginVertical: 8,
+  },
+  playerCountDisplay: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  playerCountNumber: {
+    color: COLORS.PRIMARY,
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  playerCountUnit: {
+    color: COLORS.PRIMARY,
+    fontSize: 18,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  confirmButton: {
+    backgroundColor: COLORS.PRIMARY,
+    marginTop: 24,
+    paddingVertical: 12,
+  },
+  confirmButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
