@@ -1,6 +1,9 @@
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { COLORS, TOKEN_RADIUS, TOKEN_SIZE } from "../../utils/constants";
 import { StyleSheet, Text } from "react-native";
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import { Player } from "../../types";
 import React from "react";
@@ -13,12 +16,12 @@ interface TokenProps {
   dragPlayerId?: any;
 }
 
-export default function Token({ 
-  player, 
-  isSelected, 
-  dragOffset, 
-  isDragging, 
-  dragPlayerId 
+export default function Token({
+  player,
+  isSelected,
+  dragOffset,
+  isDragging,
+  dragPlayerId,
 }: TokenProps) {
   const getTokenStyle = () => {
     switch (player.side) {
@@ -35,8 +38,9 @@ export default function Token({
 
   // 드래그 애니메이션 스타일
   const animatedStyle = useAnimatedStyle(() => {
-    const isBeingDragged = isDragging?.value && dragPlayerId?.value === player.id;
-    
+    const isBeingDragged =
+      isDragging?.value && dragPlayerId?.value === player.id;
+
     return {
       transform: [
         {
@@ -46,7 +50,7 @@ export default function Token({
           translateY: isBeingDragged ? dragOffset?.value?.y || 0 : 0,
         },
         {
-          scale: withSpring(isBeingDragged ? 1.1 : 1, {
+          scale: withSpring(isBeingDragged ? 1.3 : 1, {
             damping: 20,
             stiffness: 300,
           }),

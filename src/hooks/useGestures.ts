@@ -110,6 +110,14 @@ export const useGestures = ({
       runOnJS(onDragEnd)(e.translationX, e.translationY);
     });
 
+  const longTouch = Gesture.LongPress()
+    .enabled(mode === "move")
+    .minDuration(300)
+    .onStart((e) => {
+      const { x, y } = e;
+      runOnJS(onDragStart)(x, y);
+    });
+
   const onTab = (x: number, y: number) => {
     try {
       const nearest = findNearestPlayer(x, y, players);
@@ -156,7 +164,8 @@ export const useGestures = ({
     drawPan,
     doubleTap,
     tap,
-    dragPlayer
+    dragPlayer,
+    longTouch
   );
 
   return {
