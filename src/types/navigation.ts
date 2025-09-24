@@ -15,4 +15,9 @@ export type RootStackParamList = {
     boardId?: string;
     teamConfig: TeamSetupConfig;
   };
+  // v1.1.0 팀 관리 화면들
+  TeamList: undefined;
+  TeamEdit: {
+    teamId?: string;
+  };
 };

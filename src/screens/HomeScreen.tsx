@@ -50,6 +50,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     navigation.navigate('TeamSetup', { boardId: undefined });
   };
 
+  const openTeamManagement = () => {
+    navigation.navigate('TeamList');
+  };
+
   const openBoard = (board: SavedBoard) => {
     // 기존 보드는 기본 설정으로 열기
     const defaultConfig = {
@@ -119,6 +123,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <Text style={styles.newBoardText}>새 전술판 만들기</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.teamManagementButton} onPress={openTeamManagement}>
+        <Text style={styles.teamManagementText}>👥 팀 관리</Text>
+      </TouchableOpacity>
+
       {savedBoards.length > 0 ? (
         <>
           <Text style={styles.sectionTitle}>저장된 전술판</Text>
@@ -157,12 +165,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 30,
+    marginBottom: 16,
     alignItems: 'center',
   },
   newBoardText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  teamManagementButton: {
+    backgroundColor: '#FF9800',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  teamManagementText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
   sectionTitle: {
