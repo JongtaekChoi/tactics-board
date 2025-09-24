@@ -1,7 +1,7 @@
 # ⚽ 축구 전술 보드 (Soccer Tactics Board)
 
-> **완전한 축구 전술 계획 앱** — 포메이션 프리셋, 인터랙티브 드로잉, 애니메이션 선수 이동까지  
-> **현재 배포 준비 완료** 상태로 App Store 및 Play Store 출시 가능합니다.
+> **완전한 축구 전술 계획 앱** — 포메이션 프리셋, 인터랙티브 드로잉, 애니메이션 선수 이동까지
+> **현재 상태: iOS App Store 제출 완료** (심사 대기 중), Android 출시 준비 중
 
 ![React Native](https://img.shields.io/badge/React_Native-0.79.6-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Expo](https://img.shields.io/badge/Expo-~53.0.22-000020?style=for-the-badge&logo=expo&logoColor=white)
@@ -68,8 +68,7 @@
 ### 설치 및 실행
 
 ```bash
-# 저장소 클론
-git clone https://github.com/your-username/tactics-board.git
+# 프로젝트 디렉토리로 이동
 cd tactics-board
 
 # 의존성 설치
@@ -111,7 +110,7 @@ npx expo start --web      # Web
 - **💾 Save**: 현재 전술판 저장
 - **📋 Save As**: 새 이름으로 저장
 - **📁 Load**: 저장된 전술판 불러오기
-- **📤 Share**: PNG로 내보내기
+- **📤 Share**: ~~PNG로 내보내기~~ (v1.0.0에서 제거됨)
 
 ### 그리기 도구
 - **색상 선택**: 빨강, 파랑, 노랑, 흰색
@@ -121,32 +120,19 @@ npx expo start --web      # Web
 ## 📁 프로젝트 구조
 
 ```
-src/
-├── components/           # 재사용 가능한 UI 컴포넌트
-│   ├── board/           # 전술보드 관련 컴포넌트
-│   │   ├── TacticsBoard.tsx    # 메인 보드 컨테이너
-│   │   ├── Token.tsx           # 플레이어/공 토큰
-│   │   ├── Pitch.tsx           # 축구장 배경
-│   │   └── SvgOverlay.tsx      # SVG 드로잉 레이어
-│   └── ui/              # 공통 UI 컴포넌트
-│       ├── Button.tsx          # 아이콘 버튼
-│       ├── Toolbar.tsx         # 상단 툴바
-│       ├── ColorPicker.tsx     # 색상/굵기 선택
-│       └── TextEditModal.tsx   # 텍스트 편집 모달
-├── hooks/               # 커스텀 React Hooks
-│   ├── useBoardState.ts        # 통합 보드 상태 관리
-│   ├── useHistory.ts           # Undo/Redo 히스토리
-│   ├── useGestures.ts          # 제스처 처리
-│   └── useStorage.ts           # AsyncStorage 래퍼
-├── screens/             # 화면 컴포넌트
-│   ├── HomeScreen.tsx          # 홈/목록 화면
-│   └── BoardScreen.tsx         # 메인 전술보드 화면
-├── types/               # TypeScript 타입 정의
-│   ├── index.ts               # 공통 타입
-│   └── navigation.ts          # 네비게이션 타입
-└── utils/               # 유틸리티 함수
-    ├── constants.ts           # 상수 정의
-    └── helpers.ts             # 헬퍼 함수
+./
+├── App.tsx              # 메인 애플리케이션 (단일 화면 구조)
+├── app.json             # Expo 설정
+├── eas.json             # EAS Build 설정
+├── package.json         # 의존성 및 스크립트
+├── tsconfig.json        # TypeScript 설정
+├── docs/                # GitHub Pages 문서
+│   ├── index.html           # 랜딩페이지
+│   └── privacy-policy.html  # 개인정보 처리방침
+├── CLAUDE.md            # 개발자 가이드 (메인 문서)
+├── TODO.md              # 개발 로드맵 및 TODO 리스트
+├── TEAM_MANAGEMENT_PLAN.md  # v1.1.0 팀 관리 시스템 계획
+└── README.md            # 프로젝트 개요 (이 문서)
 ```
 
 ## 🎯 아키텍처 특징
@@ -185,7 +171,7 @@ function strokeToPath(stroke: Stroke): string {
 - [x] Undo/Redo가 모든 액션(드로잉/이동/편집)에서 작동
 - [x] 탭-투-셀렉트 시스템이 정확하게 동작
 - [x] 더블탭으로 텍스트 편집 모달 정상 작동
-- [x] PNG Export 결과가 화면과 동일하게 저장
+- [x] ~~PNG Export 결과가 화면과 동일하게 저장~~ (v1.0.0에서 제거됨)
 - [x] 저장/불러오기가 정상 동작 (앱 재시작 후에도 유지)
 - [x] Save/Save As 기능 분리
 - [x] 아이콘 기반 직관적 UI
@@ -214,19 +200,18 @@ function strokeToPath(stroke: Stroke): string {
 - [x] **다중 저장**: Save/Save As 분리
 - [x] **한국어 다크테마**: 전문적 코칭 UI
 
-### 🔄 배포 후 개선 계획 (v1.1.0)
-- [ ] **7vs7, 5vs5 지원**: 현재 11vs11만 활성화됨
-- [ ] **터치 감도 최적화**: 태블릿 환경 개선
-- [ ] **추가 세트피스**: 프리킥, 페널티킥 전용 템플릿
-- [ ] **색상 커스터마이징**: 팀 색상 선택 기능
+### 🔄 다음 계획
 
-### 🌐 확장 기능
-- [ ] **멀티 보드**: 여러 전술판 탭으로 관리
-- [ ] **템플릿 라이브러리**: 유명 전술 템플릿 제공
-- [ ] **내보내기 옵션**: PDF, JPG, SVG 형식 지원
-- [ ] **실시간 협업**: 다중 사용자 동시 편집
-- [ ] **클라우드 동기화**: Firebase 기반 데이터 백업
-- [ ] **AI 전술 분석**: 포메이션 강약점 분석 및 제안
+**v1.0.1**: Android 출시 (계정 준비 후)
+- [ ] Google Play Store 제출
+- [ ] Android 최적화
+
+**v1.1.0**: 팀 관리 시스템 ([상세 계획](./TEAM_MANAGEMENT_PLAN.md))
+- [ ] **실제 팀 명단 관리**: 코치 워크플로우 지원
+- [ ] **7vs7, 5vs5 지원**: 다양한 인원 옵션
+- [ ] **터치 감도 최적화**: 태블릿 환경 개선
+
+전체 로드맵은 [TODO.md](./TODO.md)에서 확인할 수 있습니다.
 
 ### 🐛 버그 수정
 - [ ] **Android 제스처 이슈**: 일부 디바이스에서 터치 반응성 개선
@@ -289,17 +274,16 @@ npx eas submit --platform android
 - 실시간 협업 기능
 - AI 전술 분석
 
-## 🤝 기여하기
+## 📚 문서 구조
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- **[README.md](./README.md)**: 프로젝트 개요 및 사용법 (이 문서)
+- **[CLAUDE.md](./CLAUDE.md)**: 개발자 가이드 및 현재 상태
+- **[TODO.md](./TODO.md)**: 개발 로드맵 및 우선순위별 TODO 리스트
+- **[TEAM_MANAGEMENT_PLAN.md](./TEAM_MANAGEMENT_PLAN.md)**: v1.1.0 팀 관리 시스템 상세 설계
 
 ## 📄 라이선스
 
-MIT License로 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
+이 프로젝트는 개인 포트폴리오 프로젝트입니다. 상업적 사용이나 재배포를 원하시면 개발자에게 문의해 주세요.
 
 ## 🙏 크레딧
 
