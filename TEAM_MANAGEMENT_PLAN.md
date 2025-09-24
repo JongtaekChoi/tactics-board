@@ -14,6 +14,7 @@
 - 교체 시나리오 작성이 번거로움 (이름을 직접 변경해야 함)
 - 여러 전술판에서 동일한 팀을 재사용하기 어려움
 - 실제 팀 명단 관리 기능 부재
+- 상대팀 설정 시에도 팀 데이터를 활용할 수 없음 (홈/어웨이 모두 수동 입력)
 
 ---
 
@@ -62,18 +63,24 @@ type StorageStructure = {
 
 ```
 현재: 포메이션 선택 → 인원 선택 → 전술판
-개선: 팀 선택 → 포메이션 선택 → 인원 선택 → 선수 자동 배치 → 전술판
+개선: 홈팀 선택 → 어웨이팀 선택 → 포메이션 선택 → 인원 선택 → 선수 자동 배치 → 전술판
 
 단계별 상세:
-1️⃣ 팀 선택
+1️⃣ 홈팀 선택
    - 기존 팀에서 선택 OR "팀 없이 시작"
    - 선택한 팀의 선수 수 표시
 
-2️⃣ 포메이션 & 인원 선택
-   - 기존과 동일하지만 팀 선수 수 고려
+2️⃣ 어웨이팀 선택
+   - 기존 팀에서 선택 OR "팀 없이 시작" OR "상대팀 생략"
+   - 선택한 팀의 선수 수 표시
+   - 상대팀 생략 시 기존처럼 "상대1", "상대2" 등으로 표시
 
-3️⃣ 선수 자동 배치
-   - 팀을 선택했다면: 첫 N명 자동 선택 또는 사용자가 수동 선택
+3️⃣ 포메이션 & 인원 선택
+   - 기존과 동일하지만 각 팀의 선수 수 고려
+
+4️⃣ 선수 자동 배치
+   - 홈팀: 선택한 팀의 첫 N명 자동 선택 또는 사용자가 수동 선택
+   - 어웨이팀: 선택한 팀의 첫 N명 자동 선택 또는 사용자가 수동 선택
    - 팀 없이 시작: 기존처럼 "선수1", "선수2" 등
 ```
 
@@ -101,10 +108,17 @@ type StorageStructure = {
   └── <TeamEditor team={selectedTeam} />
 
 // 2. 전술판 설정에 추가
-<TeamSelection
+<HomeTeamSelection
   teams={teams}
   onSelectTeam={(team) => void}
   onSkipTeam={() => void}
+/>
+
+<AwayTeamSelection
+  teams={teams}
+  onSelectTeam={(team) => void}
+  onSkipTeam={() => void}
+  onSkipAwayTeam={() => void}
 />
 
 // 3. 선수 선택/배치
@@ -137,12 +151,22 @@ const saveTeam = async (team: Team) => {
   await AsyncStorage.setItem('teams', JSON.stringify(updated));
 };
 
-// 전술판에서 팀 연결
-const createBoardWithTeam = (team: Team, formation: Formation, selectedPlayers: string[]) => {
+// 전술판에서 팀 연결 (홈/어웨이 모두)
+const createBoardWithTeams = (
+  homeTeam: Team | null,
+  awayTeam: Team | null,
+  formation: Formation,
+  homeSelectedPlayers: string[],
+  awaySelectedPlayers: string[]
+) => {
   return {
     ...boardState,
-    teamId: team.id,
-    players: mapPlayersToFormation(selectedPlayers, formation)
+    homeTeamId: homeTeam?.id || null,
+    awayTeamId: awayTeam?.id || null,
+    players: [
+      ...mapPlayersToFormation(homeSelectedPlayers, formation, 'home'),
+      ...mapPlayersToFormation(awaySelectedPlayers, formation, 'away')
+    ]
   };
 };
 ```
@@ -160,7 +184,7 @@ App.tsx (단일 화면)
 ├── 🏠 HomeScreen (전술판)
 ├── 👥 TeamManagementScreen
 ├── ⚙️ SettingsScreen
-└── 📋 SetupScreen (팀선택 → 포메이션 → 전술판)
+└── 📋 SetupScreen (홈팀선택 → 어웨이팀선택 → 포메이션 → 전술판)
 ```
 
 ---
@@ -176,7 +200,7 @@ App.tsx (단일 화면)
 ### Phase 2: 전술판 연동 (2-3일)
 
 - [ ] React Navigation 도입
-- [ ] 전술판 설정 플로우에 팀 선택 추가
+- [ ] 전술판 설정 플로우에 홈팀/어웨이팀 선택 추가
 - [ ] 선수 자동 배치 로직 구현
 
 ### Phase 3: 교체 시스템 (1-2일)
@@ -205,8 +229,9 @@ App.tsx (단일 화면)
 
 ### 전술판 생성
 
-- [ ] 팀 선택하여 생성: 팀 선택 → 포메이션 → 선수 자동 배치
+- [ ] 팀 선택하여 생성: 홈팀/어웨이팀 선택 → 포메이션 → 선수 자동 배치
 - [ ] 팀 없이 생성: 기존 방식과 동일하게 작동
+- [ ] 상대팀만 생략: 홈팀만 선택하고 어웨이팀은 기본값 사용
 - [ ] 인원 부족 시나리오: 팀 선수가 요구 인원보다 적을 때
 
 ### 교체 기능
@@ -265,7 +290,8 @@ App.tsx (단일 화면)
 
 - [ ] `TeamListScreen` - 팀 목록 화면
 - [ ] `TeamEditScreen` - 팀 생성/편집 화면
-- [ ] `TeamSelectionModal` - 전술판 생성 시 팀 선택
+- [ ] `HomeTeamSelectionModal` - 전술판 생성 시 홈팀 선택
+- [ ] `AwayTeamSelectionModal` - 전술판 생성 시 어웨이팀 선택
 - [ ] `PlayerSelectionModal` - 선수 선택/배치
 - [ ] `SubstitutionModal` - 교체 기능
 
@@ -283,4 +309,40 @@ App.tsx (단일 화면)
 
 ---
 
-*마지막 업데이트: 2024년 9월 22일*
+---
+
+## 🆚 홈/어웨이 팀 선택 시스템
+
+### 핵심 개선사항
+
+**문제**: 현재는 홈팀만 관리 가능, 상대팀은 항상 수동 입력
+**해결**: 홈팀과 어웨이팀 모두 팀 데이터베이스에서 선택 가능
+
+### 사용자 시나리오
+
+#### 시나리오 1: 양팀 모두 관리하는 코치
+- 홈팀: "FC Seoul" 선택 → 어웨이팀: "수원 삼성" 선택
+- 양팀 모두 실제 선수 명단으로 자동 배치
+
+#### 시나리오 2: 상대팀 분석용
+- 홈팀: "우리 팀" 선택 → 어웨이팀: "바르셀로나" 선택
+- 상대팀 전술 분석 및 대응 전략 수립
+
+#### 시나리오 3: 기존 사용자 (하위 호환)
+- 홈팀: "팀 없이 시작" → 어웨이팀: "상대팀 생략"
+- 기존 방식과 동일하게 "선수1", "상대1" 등으로 표시
+
+### 데이터 구조 확장
+
+```typescript
+type BoardState = {
+  // 기존 필드들...
+  homeTeamId: string | null;    // 홈팀 ID
+  awayTeamId: string | null;    // 어웨이팀 ID
+  players: Player[];            // 홈팀 + 어웨이팀 모든 선수
+};
+```
+
+---
+
+*마지막 업데이트: 2024년 9월 24일*
