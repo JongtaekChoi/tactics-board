@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,6 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import { RootStackParamList, TeamSetupConfig } from '../types/navigation';
+import { Team } from '../types/team';
+import { loadTeams } from '../services/teamService';
 import Button from '../components/ui/Button';
 import { COLORS } from '../utils/constants';
 
@@ -47,17 +49,38 @@ const TACTICAL_OPTIONS_OTHER = [
   { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
 ] as const;
 
-type SetupStep = 'team' | 'count' | 'tactical' | 'complete';
+type SetupStep = 'team-selection' | 'home-team' | 'away-team' | 'count' | 'tactical' | 'complete';
 
 export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenProps) {
   const { boardId } = route.params;
-  
-  const [currentStep, setCurrentStep] = useState<SetupStep>('team');
+
+  const [currentStep, setCurrentStep] = useState<SetupStep>('team-selection');
   const [config, setConfig] = useState<TeamSetupConfig>({
     teamSelection: 'both-teams',
     playerCount: 11,
     tacticalType: 'free',
+    homeTeamId: undefined,
+    awayTeamId: undefined,
   });
+
+  // 팀 목록 로드
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true);
+
+  useEffect(() => {
+    loadAllTeams();
+  }, []);
+
+  const loadAllTeams = async () => {
+    try {
+      const allTeams = await loadTeams();
+      setTeams(allTeams);
+    } catch (error) {
+      console.error('팀 목록 로드 실패:', error);
+    } finally {
+      setIsLoadingTeams(false);
+    }
+  };
 
   // 애니메이션 values
   const countOpacity = useSharedValue(0);
@@ -65,11 +88,37 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
   const tacticalOpacity = useSharedValue(0);
   const tacticalTranslateY = useSharedValue(30);
 
+  // 팀 선택 방식 결정 (home-only vs both-teams)
   const handleTeamSelection = (teamSelection: 'home-only' | 'both-teams') => {
     setConfig(prev => ({ ...prev, teamSelection }));
+
+    // 팀이 없으면 바로 인원 수로, 있으면 홈팀 선택으로
+    if (teams.length === 0) {
+      setCurrentStep('count');
+      countOpacity.value = withTiming(1, { duration: 500 });
+      countTranslateY.value = withSpring(0);
+    } else {
+      setCurrentStep('home-team');
+    }
+  };
+
+  // 홈팀 선택
+  const handleHomeTeamSelection = (teamId: string) => {
+    setConfig(prev => ({ ...prev, homeTeamId: teamId }));
+
+    if (config.teamSelection === 'both-teams') {
+      setCurrentStep('away-team');
+    } else {
+      setCurrentStep('count');
+      countOpacity.value = withTiming(1, { duration: 500 });
+      countTranslateY.value = withSpring(0);
+    }
+  };
+
+  // 어웨이팀 선택
+  const handleAwayTeamSelection = (teamId: string) => {
+    setConfig(prev => ({ ...prev, awayTeamId: teamId }));
     setCurrentStep('count');
-    
-    // 인원 수 섹션 애니메이션
     countOpacity.value = withTiming(1, { duration: 500 });
     countTranslateY.value = withSpring(0);
   };
@@ -159,25 +208,93 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Step 1: 팀 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>팀 선택</Text>
-          <Text style={styles.sectionDescription}>어떤 팀을 배치할까요?</Text>
-          <View style={styles.optionsGrid}>
-            {TEAM_OPTIONS.map((option) => (
-              <OptionCard
-                key={option.value}
-                title={option.label}
-                value={option.value}
-                isSelected={config.teamSelection === option.value}
-                onPress={() => handleTeamSelection(option.value)}
-              />
-            ))}
+        {/* Step 1: 팀 선택 방식 */}
+        {currentStep === 'team-selection' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>팀 선택</Text>
+            <Text style={styles.sectionDescription}>어떤 팀을 배치할까요?</Text>
+            <View style={styles.optionsGrid}>
+              {TEAM_OPTIONS.map((option) => (
+                <OptionCard
+                  key={option.value}
+                  title={option.label}
+                  value={option.value}
+                  isSelected={config.teamSelection === option.value}
+                  onPress={() => handleTeamSelection(option.value)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
-        {/* Step 2: 인원 수 (슬라이더 UI) */}
-        {currentStep !== 'team' && (
+        {/* Step 2: 홈팀 선택 */}
+        {currentStep === 'home-team' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>홈팀 선택</Text>
+            <Text style={styles.sectionDescription}>홈팀을 선택하세요</Text>
+
+            {isLoadingTeams ? (
+              <Text style={styles.loadingText}>팀 목록을 불러오는 중...</Text>
+            ) : teams.length === 0 ? (
+              <View style={styles.noTeamsContainer}>
+                <Text style={styles.noTeamsText}>등록된 팀이 없습니다.</Text>
+                <Button
+                  variant="primary"
+                  onPress={() => navigation.navigate('TeamList')}
+                  style={styles.createTeamButton}
+                >
+                  <Text style={styles.createTeamButtonText}>새 팀 만들기</Text>
+                </Button>
+              </View>
+            ) : (
+              <View style={styles.optionsGrid}>
+                {teams.map((team) => (
+                  <OptionCard
+                    key={team.id}
+                    title={team.name}
+                    value={team.id}
+                    isSelected={config.homeTeamId === team.id}
+                    onPress={() => handleHomeTeamSelection(team.id)}
+                  />
+                ))}
+                <OptionCard
+                  title="팀 없이 진행"
+                  value=""
+                  isSelected={config.homeTeamId === ''}
+                  onPress={() => handleHomeTeamSelection('')}
+                />
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Step 3: 어웨이팀 선택 */}
+        {currentStep === 'away-team' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>어웨이팀 선택</Text>
+            <Text style={styles.sectionDescription}>어웨이팀을 선택하세요</Text>
+            <View style={styles.optionsGrid}>
+              {teams.filter(team => team.id !== config.homeTeamId).map((team) => (
+                <OptionCard
+                  key={team.id}
+                  title={team.name}
+                  value={team.id}
+                  isSelected={config.awayTeamId === team.id}
+                  onPress={() => handleAwayTeamSelection(team.id)}
+                />
+              ))}
+              <OptionCard
+                title="팀 없이 진행"
+                value=""
+                isSelected={config.awayTeamId === ''}
+                onPress={() => handleAwayTeamSelection('')}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Step 4: 인원 수 (슬라이더 UI) */}
+        {currentStep === 'count' && (
           <Animated.View style={[styles.section, countAnimatedStyle]}>
             <Text style={styles.sectionTitle}>인원 수</Text>
             <Text style={styles.sectionDescription}>
@@ -372,5 +489,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  loadingText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
+    paddingVertical: 32,
+  },
+  noTeamsContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
+  },
+  noTeamsText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  createTeamButton: {
+    backgroundColor: COLORS.PRIMARY,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  createTeamButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
