@@ -1,8 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { BOARD_WIDTH, BOARD_HEIGHT, COLORS } from '../../utils/constants';
+import { COLORS } from '../../utils/constants';
+import { useBoardDimensions } from '../../contexts/BoardContext';
 
 export default function Pitch() {
+  const { BOARD_WIDTH, BOARD_HEIGHT } = useBoardDimensions();
+
   return (
     <View style={StyleSheet.absoluteFill}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: COLORS.PITCH }]} />
@@ -28,26 +31,56 @@ export default function Pitch() {
           borderColor: "white",
         }}
       />
-      
+
       {/* 상단 골 포스트 */}
-      <View style={[styles.goalPost, styles.topGoal]} />
+      <View style={[styles.goalPost, {
+        top: 6,
+        left: BOARD_WIDTH / 2 - 20,
+        width: 40,
+        height: 2,
+      }]} />
       <View style={[styles.goalPostLeft, { top: 6, left: BOARD_WIDTH / 2 - 22 }]} />
       <View style={[styles.goalPostRight, { top: 6, left: BOARD_WIDTH / 2 + 20 }]} />
-      
+
       {/* 하단 골 포스트 */}
-      <View style={[styles.goalPost, styles.bottomGoal]} />
+      <View style={[styles.goalPost, {
+        bottom: 6,
+        left: BOARD_WIDTH / 2 - 20,
+        width: 40,
+        height: 2,
+      }]} />
       <View style={[styles.goalPostLeft, { bottom: 6, left: BOARD_WIDTH / 2 - 22 }]} />
       <View style={[styles.goalPostRight, { bottom: 6, left: BOARD_WIDTH / 2 + 20 }]} />
-      
+
       {/* 페널티 박스 - 상단 */}
-      <View style={[styles.penaltyBox, styles.topPenaltyBox]} />
+      <View style={[styles.penaltyBox, {
+        top: 8,
+        left: BOARD_WIDTH / 2 - 50,
+        width: 100,
+        height: 60,
+      }]} />
       {/* 페널티 박스 - 하단 */}
-      <View style={[styles.penaltyBox, styles.bottomPenaltyBox]} />
-      
+      <View style={[styles.penaltyBox, {
+        bottom: 8,
+        left: BOARD_WIDTH / 2 - 50,
+        width: 100,
+        height: 60,
+      }]} />
+
       {/* 골 에리어 - 상단 */}
-      <View style={[styles.goalArea, styles.topGoalArea]} />
+      <View style={[styles.goalArea, {
+        top: 8,
+        left: BOARD_WIDTH / 2 - 25,
+        width: 50,
+        height: 25,
+      }]} />
       {/* 골 에리어 - 하단 */}
-      <View style={[styles.goalArea, styles.bottomGoalArea]} />
+      <View style={[styles.goalArea, {
+        bottom: 8,
+        left: BOARD_WIDTH / 2 - 25,
+        width: 50,
+        height: 25,
+      }]} />
     </View>
   );
 }
@@ -72,46 +105,10 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   goalPostRight: {
-    position: "absolute", 
+    position: "absolute",
     width: 2,
     height: 8,
     backgroundColor: "white",
-  },
-  topGoal: {
-    top: 6,
-    left: BOARD_WIDTH / 2 - 20,
-    width: 40,
-    height: 2,
-  },
-  bottomGoal: {
-    bottom: 6,
-    left: BOARD_WIDTH / 2 - 20,
-    width: 40,
-    height: 2,
-  },
-  topPenaltyBox: {
-    top: 8,
-    left: BOARD_WIDTH / 2 - 50,
-    width: 100,
-    height: 60,
-  },
-  bottomPenaltyBox: {
-    bottom: 8,
-    left: BOARD_WIDTH / 2 - 50,
-    width: 100,
-    height: 60,
-  },
-  topGoalArea: {
-    top: 8,
-    left: BOARD_WIDTH / 2 - 25,
-    width: 50,
-    height: 25,
-  },
-  bottomGoalArea: {
-    bottom: 8,
-    left: BOARD_WIDTH / 2 - 25,
-    width: 50,
-    height: 25,
   },
   penaltyBox: {
     position: "absolute",
@@ -121,7 +118,7 @@ const styles = StyleSheet.create({
   },
   goalArea: {
     position: "absolute",
-    borderColor: "white", 
+    borderColor: "white",
     borderWidth: 2,
     backgroundColor: "transparent",
   },

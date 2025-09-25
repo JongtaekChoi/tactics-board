@@ -4,6 +4,9 @@ export type TeamSetupConfig = {
   teamSelection: 'home-only' | 'both-teams';
   playerCount: 11 | 7 | 5 | number;
   tacticalType: TacticalType;
+  // v1.1.0 팀 관리 연동
+  homeTeamId?: string;
+  awayTeamId?: string;
 };
 
 export type RootStackParamList = {

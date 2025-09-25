@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Player, Stroke } from '../types';
-import { initialPlayers, initialBall } from '../utils/helpers';
+import { useFormationHelpers } from './useFormationHelpers';
 
 export type HistoryState = {
   home: Player[];
@@ -15,10 +15,12 @@ export type HistoryAction =
   | { type: 'UPDATE_PLAYER_LABEL'; playerId: string; label: string };
 
 export const useHistory = () => {
+  const { initialPlayers, initialBall } = useFormationHelpers();
+
   const [history, setHistory] = useState<HistoryState[]>([{
     home: initialPlayers("home"),
     away: initialPlayers("away"),
-    ball: initialBall(),
+    ball: initialBall,
     strokes: [],
   }]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -101,7 +103,7 @@ export const useHistory = () => {
     const initialState = {
       home: initialPlayers("home"),
       away: initialPlayers("away"),
-      ball: initialBall(),
+      ball: initialBall,
       strokes: [],
     };
     setHistory([initialState]);

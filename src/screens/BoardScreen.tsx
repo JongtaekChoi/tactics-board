@@ -1,6 +1,6 @@
 import { Alert, StyleSheet, View, Text } from "react-native";
 import { BoardData, Mode } from "../types";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../utils/constants";
@@ -14,7 +14,8 @@ import TextEditModal from "../components/ui/TextEditModal";
 import Toolbar from "../components/ui/Toolbar";
 import { useBoardState } from "../hooks/useBoardState";
 import { useGestures } from "../hooks/useGestures";
-import { createPlayersFromConfig } from "../utils/helpers";
+import { useFormationHelpers } from "../hooks/useFormationHelpers";
+import { useBoardDimensions } from "../contexts/BoardContext";
 import Button from "../components/ui/Button";
 
 type BoardScreenProps = {
@@ -39,8 +40,10 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
-  // Custom hook - 통합된 보드 상태 관리
+  // Custom hooks
   const board = useBoardState();
+  const { createPlayersFromConfig, createPlayersFromConfigSync } = useFormationHelpers();
+  const { isReady } = useBoardDimensions();
 
   // 제스처 핸들러
   const { composedGesture, dragOffset, isDragging, dragPlayerId } = useGestures({
@@ -58,25 +61,41 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   });
 
   useEffect(() => {
+    // BoardContext가 준비되기 전까지 기다림
+    if (!isReady) return;
+
     if (boardId) {
       loadBoard();
     } else {
       // 새 보드인 경우 teamConfig로 초기화
       initializeNewBoard();
     }
-  }, [boardId, teamConfig]);
+  }, [boardId, teamConfig, isReady]);
 
-  const initializeNewBoard = () => {
-    const { home, away, ball } = createPlayersFromConfig(currentTeamConfig);
-    board.loadFromData(home, away, ball, []);
-    
-    // 새 보드의 경우 초기 상태를 TeamSetup 설정으로 저장
-    setInitialState({
-      home,
-      away,
-      ball,
-      strokes: []
-    });
+  const initializeNewBoard = async () => {
+    try {
+      const { home, away, ball } = await createPlayersFromConfig(currentTeamConfig);
+      board.loadFromData(home, away, ball, []);
+
+      // 새 보드의 경우 초기 상태를 TeamSetup 설정으로 저장
+      setInitialState({
+        home,
+        away,
+        ball,
+        strokes: []
+      });
+    } catch (error) {
+      console.error('보드 초기화 실패:', error);
+      // 팀 데이터 로드 실패 시 기본값으로 폴백
+      const { home, away, ball } = createPlayersFromConfigSync(currentTeamConfig);
+      board.loadFromData(home, away, ball, []);
+      setInitialState({
+        home,
+        away,
+        ball,
+        strokes: []
+      });
+    }
   };
 
   const loadBoard = async () => {
@@ -214,13 +233,24 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
       );
     } else {
       // 새 보드 → TeamSetup에서 선택한 초기 전술로 복원
-      const { home, away, ball } = createPlayersFromConfig(currentTeamConfig);
+      const { home, away, ball } = createPlayersFromConfigSync(currentTeamConfig);
       board.loadFromData(home, away, ball, []);
     }
     
     // 선택 상태 초기화
     board.setSelectedId(null);
   };
+
+  // BoardContext가 준비되지 않았으면 로딩 표시
+  if (!isReady) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: 'white', fontSize: 18 }}>전술판 준비 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root}>

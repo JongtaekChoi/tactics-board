@@ -2,7 +2,7 @@ import { Mode, Player, Point, Stroke } from "../types";
 import { runOnJS, useSharedValue } from "react-native-reanimated";
 
 import { Gesture } from "react-native-gesture-handler";
-import { findNearestPlayer } from "../utils/helpers";
+import { useFormationHelpers } from "./useFormationHelpers";
 
 interface UseGesturesProps {
   mode: Mode;
@@ -31,6 +31,7 @@ export const useGestures = ({
   onPlayerEdit,
   selectedId,
 }: UseGesturesProps) => {
+  const { findNearestPlayer } = useFormationHelpers();
   const drawPan = Gesture.Pan()
     .enabled(mode === "draw")
     .onStart((e) => {
