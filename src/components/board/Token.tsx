@@ -2,11 +2,12 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS, TOKEN_RADIUS, TOKEN_SIZE } from "../../utils/constants";
+import { COLORS } from "../../utils/constants";
 import { StyleSheet, Text } from "react-native";
 
 import { Player } from "../../types";
 import React from "react";
+import { useBoardDimensions } from "../../contexts/BoardContext";
 
 interface TokenProps {
   player: Player;
@@ -23,6 +24,7 @@ export default function Token({
   isDragging,
   dragPlayerId,
 }: TokenProps) {
+  const { TOKEN_SIZE, TOKEN_RADIUS } = useBoardDimensions();
   const getTokenStyle = () => {
     switch (player.side) {
       case "home":
@@ -68,6 +70,9 @@ export default function Token({
         {
           left: player.x - TOKEN_RADIUS,
           top: player.y - TOKEN_RADIUS,
+          width: TOKEN_SIZE,
+          height: TOKEN_SIZE,
+          borderRadius: TOKEN_RADIUS,
           ...getTokenStyle(),
           borderWidth: isSelected ? 3 : 0,
           borderColor: isSelected ? COLORS.SELECTED : "transparent",
@@ -76,7 +81,10 @@ export default function Token({
       ]}
     >
       <Text
-        style={[styles.tokenText, player.side === "ball" && { fontSize: 18 }]}
+        style={[
+          styles.tokenText,
+          { fontSize: player.side === "ball" ? TOKEN_SIZE * 0.55 : TOKEN_SIZE * 0.45 }
+        ]}
       >
         {player.label}
       </Text>
@@ -87,9 +95,6 @@ export default function Token({
 const styles = StyleSheet.create({
   token: {
     position: "absolute",
-    width: TOKEN_SIZE,
-    height: TOKEN_SIZE,
-    borderRadius: TOKEN_RADIUS,
     alignItems: "center",
     justifyContent: "center",
   },

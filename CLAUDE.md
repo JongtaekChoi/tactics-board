@@ -332,6 +332,35 @@ npx eas submit --platform android
 - **TypeScript 엄격 모드**: 모든 컴파일 오류 해결 후 커밋
 - **성능 우선**: 60fps 유지하는 애니메이션 구현
 
+## 이슈 관리
+
+GitHub Issues를 사용하여 버그 리포트, 기능 요청, 개선사항을 추적합니다.
+
+```bash
+# 새 이슈 생성 (GitHub CLI 사용)
+gh issue create --title "이슈 제목" \
+  --body "이슈 설명" \
+  --label "bug,v1.1.1"
+
+# 기능 요청 예시
+gh issue create --title "팀 선택 후 보드 초기화 개선" \
+  --body "팀 정보를 활용한 선수 이름 자동 설정 필요" \
+  --label "enhancement,v1.1.1"
+
+# 버그 리포트 예시
+gh issue create --title "드래그 시 성능 저하" \
+  --body "복수 선수 동시 드래그 시 프레임 드랍 발생" \
+  --label "bug,performance"
+```
+
+**이슈 라벨링 가이드:**
+- `bug`: 버그 수정
+- `enhancement`: 기능 개선
+- `feature`: 새 기능
+- `performance`: 성능 관련
+- `ui`: UI/UX 개선
+- `v1.1.1`, `v1.2.0`: 버전별 분류
+
 ## 📁 추가 문서
 
 - **DEPLOYMENT.md**: 상세한 EAS Build 및 앱스토어 제출 가이드

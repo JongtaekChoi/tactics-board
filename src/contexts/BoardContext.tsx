@@ -23,6 +23,9 @@ interface BoardContextValue {
   dimensions: BoardDimensions;
   BOARD_WIDTH: number;
   BOARD_HEIGHT: number;
+  TOKEN_SIZE: number;
+  TOKEN_RADIUS: number;
+  SELECTION_RADIUS: number;
   isReady: boolean;
 }
 
@@ -39,6 +42,14 @@ export const useBoardDimensions = () => {
 interface BoardProviderProps {
   children: ReactNode;
 }
+
+// 동적 토큰 크기 계산 함수
+const calculateTokenSize = (boardWidth: number, boardHeight: number): number => {
+  // 보드 크기 기준으로 토큰 크기 계산 (보드 크기의 8%)
+  const baseSize = Math.min(boardWidth, boardHeight) * 0.08;
+  // 최소 28px, 최대 48px로 제한
+  return Math.max(28, Math.min(48, Math.round(baseSize)));
+};
 
 export const BoardProvider: React.FC<BoardProviderProps> = ({ children }) => {
   const [dimensions, setDimensions] = useState<BoardDimensions | null>(null);
@@ -135,6 +146,13 @@ export const BoardProvider: React.FC<BoardProviderProps> = ({ children }) => {
     };
   }, [insets]);
 
+  // 동적 토큰 크기 계산
+  const tokenSize = dimensions
+    ? calculateTokenSize(dimensions.boardWidth, dimensions.boardHeight)
+    : 32; // 기본값
+  const tokenRadius = tokenSize / 2;
+  const selectionRadius = tokenRadius + 8; // 터치 감지 영역을 약간 크게
+
   const contextValue: BoardContextValue = {
     dimensions: dimensions || {
       width: 0,
@@ -147,6 +165,9 @@ export const BoardProvider: React.FC<BoardProviderProps> = ({ children }) => {
     },
     BOARD_WIDTH: dimensions?.boardWidth || 350,
     BOARD_HEIGHT: dimensions ? dimensions.boardHeight : 350 * 1.55,
+    TOKEN_SIZE: tokenSize,
+    TOKEN_RADIUS: tokenRadius,
+    SELECTION_RADIUS: selectionRadius,
     isReady: dimensions !== null,
   };
 

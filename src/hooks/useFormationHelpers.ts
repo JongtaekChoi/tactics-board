@@ -4,7 +4,6 @@ import { TeamSetupConfig, TacticalType } from '../types/navigation';
 import { Team, Player as TeamPlayer } from '../types/team';
 import { getTeamById } from '../services/teamService';
 import { useBoardDimensions } from '../contexts/BoardContext';
-import { SELECTION_RADIUS } from '../utils/constants';
 
 // 통합된 전술 시스템 - 포메이션과 전술 유형을 하나로 통합
 // 세로 축구장: 위쪽(y=0) = 상대팀, 아래쪽(y=1) = 우리팀
@@ -170,7 +169,7 @@ const generateDynamicFormation = (playerCount: number): { home: number[][]; away
 };
 
 export const useFormationHelpers = () => {
-  const { BOARD_WIDTH, BOARD_HEIGHT } = useBoardDimensions();
+  const { BOARD_WIDTH, BOARD_HEIGHT, SELECTION_RADIUS } = useBoardDimensions();
 
   const initialPlayers = useMemo(() =>
     (side: "home" | "away", count: number = 11): Player[] =>
