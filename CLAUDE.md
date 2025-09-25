@@ -26,10 +26,12 @@
 
 - **React Native (Expo, TypeScript)**
 - 제스처: `react-native-reanimated` + `react-native-gesture-handler` (부드러운 애니메이션)
-- 캡처/공유: `react-native-view-shot`, `expo-sharing`
+- UI 관리: `react-native-safe-area-context` (SafeArea 대응)
+- 상태 관리: **ContextAPI** (BoardContext로 반응형 크기 관리)
 - 저장: `@react-native-async-storage/async-storage`
+- 드로잉: `react-native-svg` (벡터 기반 전술 라인)
 
-> 확장 시 `react-native-svg` 또는 **Skia**로 드로잉 품질을 높일 수 있습니다.
+> **v1.1.0+**: ContextAPI 기반 반응형 디자인으로 모든 디바이스에서 최적화된 사용자 경험 제공
 
 ---
 
@@ -71,24 +73,45 @@ npx expo start
 
 ## 🖊️ 주요 설계/결정
 
-- **의존성 최소화**: 초기엔 SVG/Skia 없이 `View` 조합으로 선 세그먼트 렌더 → 빠른 구현 & 빌드 리스크↓
+- **반응형 디자인 우선**: BoardContext로 SafeArea를 고려한 동적 크기 계산
 - **개선된 터치 시스템**: PanResponder → Reanimated로 전환하여 부드러운 애니메이션과 제스처 충돌 해결
 - **직관적 선택 시스템**: 탭-투-셀렉트로 드래그 없이도 정확한 말 이동 가능
 - **Undo/Redo**: 드로잉 스택 + redo 스택을 분리해 직관적인 동작 보장
-- **단일 보관 방식**: 미니 범위에 맞춰 `AsyncStorage` 1개 슬롯만 제공("마지막 전술판")
+- **확장 가능한 아키텍처**: ContextAPI + Hook 패턴으로 미래 기능 확장 대응
+- **팀 관리 통합**: v1.1.0에서 실제 팀 데이터와 선수 교체 시스템 구현
 - **축구공 추가**: 전술 시나리오에 필수적인 볼 위치 표시
+
+### 🎯 **v1.1.0 핵심 개선사항**
+
+- **BoardContext**: SafeArea 인식 반응형 크기 계산
+- **useFormationHelpers**: 재사용 가능한 포메이션 로직
+- **실시간 크기 조정**: 화면 회전 및 다양한 디바이스 자동 대응
+- **축구장 비율 유지**: 모든 화면에서 1.55 비율 최적화
 
 ---
 
-## 🧪 테스트 체크리스트 (MVP 기준)
+## 🧪 테스트 체크리스트 (v1.1.0 기준)
 
+### 📱 **Core Features**
 - [x] 드로잉 시작/이동/종료가 부드럽다 ✅
 - [x] Undo/Redo가 마지막 Stroke 기준으로 정상 동작 ✅
 - [x] 탭-투-셀렉트 시스템이 정확하게 동작 (선택 표시 + 이동) ✅
 - [x] 축구공과 선수 토큰이 모두 정상 선택/이동됨 ✅
 - [x] 더블탭으로 텍스트 편집 모달이 정상 작동 ✅
-- [x] ~~PNG Export 결과가 화면과 동일(해상도/배경 포함)하게 저장됨~~ (기능 제거됨) ✅
 - [x] 저장/불러오기가 정상 동작 (앱 재시작 후에도 유지) ✅
+
+### 🎯 **Responsive Design (v1.1.0)**
+- [x] SafeArea insets가 모든 디바이스에서 정확히 계산됨 ✅
+- [x] 화면 회전 시 실시간으로 보드 크기가 재조정됨 ✅
+- [x] 축구장 비율(1.55)이 모든 화면에서 유지됨 ✅
+- [x] 헤더/툴바/ColorPicker 영역을 제외한 최적 공간 활용 ✅
+- [x] BoardContext 로딩 상태 관리가 정상 동작 ✅
+
+### 👥 **Team Management (v1.1.0)**
+- [x] 팀 생성/편집/삭제가 정상 동작 ✅
+- [x] 실제 선수 이름이 전술판에 자동 배치됨 ✅
+- [x] 선수 교체 시스템(더블탭 → 교체 선수 선택)이 정상 동작 ✅
+- [x] 팀 데이터와 전술판 상태가 정확히 연동됨 ✅
 
 ---
 
@@ -125,11 +148,17 @@ ffmpeg -i demo.mp4 -vf "fps=12,scale=540:-1:flags=lanczos" -loop 0 docs/demo.gif
 - GitHub Pages 지원 페이지 및 개인정보 처리방침
 
 ### 🎯 현재 상태
-**v1.0.0 iOS 앱스토어 출시 완료** - 정식 서비스 중 ✅
+**v1.1.0 개발 완료** - 팀 관리 시스템 + 반응형 디자인 ✅
+
+### ✨ **v1.1.0 주요 신기능**
+- **🎨 반응형 디자인**: BoardContext 기반 SafeArea 대응
+- **👥 팀 관리 시스템**: 실제 팀/선수 데이터 관리
+- **🔄 선수 교체**: 더블탭으로 벤치 선수와 교체
+- **📱 모든 기기 대응**: iPhone notch, Android navigation bar 자동 처리
 
 ### 🔮 단기 계획
-- **v1.0.1**: Android 출시 (플레이스토어 계정 준비 후)
-- **v1.1.0**: 팀 관리 시스템 ([상세 계획](./TEAM_MANAGEMENT_PLAN.md))
+- **v1.1.1**: iOS 업데이트 배포 (반응형 디자인 + 팀 관리)
+- **v1.2.0**: Android 출시 (플레이스토어 계정 준비 후)
 
 ### 🚀 장기 비전: 종합 경기 관리 플랫폼
 현재 전술판 앱을 기반으로 **완전한 경기 관리 생태계**로 확장
