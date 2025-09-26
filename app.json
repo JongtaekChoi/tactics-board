@@ -32,8 +32,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-updates"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/a10816a2-efd6-4693-bfd8-fba62ac98602"
+    },
+    "runtimeVersion": "1.0.0",
     "extra": {
       "eas": {
         "projectId": "a10816a2-efd6-4693-bfd8-fba62ac98602"
