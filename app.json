@@ -2,7 +2,7 @@
   "expo": {
     "name": "축구 전술 보드",
     "slug": "tactics-board",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -38,7 +38,7 @@
     "updates": {
       "url": "https://u.expo.dev/a10816a2-efd6-4693-bfd8-fba62ac98602"
     },
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": "1.1.0",
     "extra": {
       "eas": {
         "projectId": "a10816a2-efd6-4693-bfd8-fba62ac98602"
