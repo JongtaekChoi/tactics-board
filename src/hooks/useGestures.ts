@@ -3,6 +3,7 @@ import { runOnJS, useSharedValue } from "react-native-reanimated";
 
 import { Gesture } from "react-native-gesture-handler";
 import { useFormationHelpers } from "./useFormationHelpers";
+import { selectNextPlayerInArea } from "../utils/helpers";
 
 interface UseGesturesProps {
   mode: Mode;
@@ -63,17 +64,21 @@ export const useGestures = ({
   const dragStartPosition = useSharedValue({ x: 0, y: 0 });
 
   const onDragStart = (x: number, y: number) => {
-    let nearest = findNearestPlayer(x, y, players);
-    if (nearest == null && selectedId) {
-      nearest = players.find((p) => p.id === selectedId) || null;
+    // 터치 영역에서 플레이어를 찾되, 이미 선택된 플레이어가 있으면 우선 사용
+    let targetPlayer = selectNextPlayerInArea(x, y, players, selectedId);
+
+    // 터치 영역에 플레이어가 없지만 이미 선택된 플레이어가 있으면 그대로 사용
+    if (!targetPlayer && selectedId) {
+      targetPlayer = players.find((p) => p.id === selectedId) || null;
     }
-    console.log("Drag start at:", x, y, "Nearest player:", nearest);
-    if (nearest) {
-      dragPlayerId.value = nearest.id;
+
+    console.log("Drag start at:", x, y, "Target player:", targetPlayer);
+    if (targetPlayer) {
+      dragPlayerId.value = targetPlayer.id;
       isDragging.value = true;
-      dragStartPosition.value = { x: nearest.x, y: nearest.y };
+      dragStartPosition.value = { x: targetPlayer.x, y: targetPlayer.y };
       dragOffset.value = { x: 0, y: 0 };
-      onPlayerSelect(nearest.id);
+      onPlayerSelect(targetPlayer.id);
     }
   };
 
@@ -121,11 +126,15 @@ export const useGestures = ({
 
   const onTab = (x: number, y: number) => {
     try {
-      const nearest = findNearestPlayer(x, y, players);
-      if (nearest) {
-        onPlayerSelect(nearest.id);
-        dragPlayerId.value = nearest.id;
+      // 터치 영역에서 겹친 토큰들 중 순환 선택
+      const nextPlayer = selectNextPlayerInArea(x, y, players, selectedId);
+
+      if (nextPlayer) {
+        // 새로운 플레이어 선택 (순환)
+        onPlayerSelect(nextPlayer.id);
+        dragPlayerId.value = nextPlayer.id;
       } else if (selectedId) {
+        // 터치 영역에 플레이어가 없으면 선택된 플레이어를 그 위치로 이동
         onPlayerMove(selectedId, x, y);
         onPlayerSelect(null);
         dragPlayerId.value = null;
@@ -137,6 +146,7 @@ export const useGestures = ({
 
   const onDoubleTap = (x: number, y: number) => {
     try {
+      // 더블탭에서는 현재 선택된 플레이어 상관없이 가장 가까운 플레이어 편집
       const nearest = findNearestPlayer(x, y, players);
       if (nearest) {
         onPlayerEdit(nearest.id);

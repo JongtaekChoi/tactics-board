@@ -285,21 +285,55 @@ export const initialBall = (): Player => ({
   label: '⚽',
 });
 
-export const findNearestPlayer = (x: number, y: number, players: Player[]): Player | null => {
-  if (!players || players.length === 0) return null;
-  if (typeof x !== 'number' || typeof y !== 'number' || !isFinite(x) || !isFinite(y)) return null;
-  
+// 터치 영역 내 모든 플레이어 찾기 (거리순 정렬)
+export const findPlayersInTouchArea = (x: number, y: number, players: Player[]): Player[] => {
+  if (!players || players.length === 0) return [];
+  if (typeof x !== 'number' || typeof y !== 'number' || !isFinite(x) || !isFinite(y)) return [];
+
   try {
-    return players.reduce(
-      (best, cur) => {
-        if (!cur || typeof cur.x !== 'number' || typeof cur.y !== 'number') return best;
-        const d = (cur.x - x) ** 2 + (cur.y - y) ** 2;
-        return d < SELECTION_RADIUS * SELECTION_RADIUS && d < best.dist ? { player: cur, dist: d } : best;
-      },
-      { player: null as Player | null, dist: Infinity }
-    ).player;
+    const playersWithDistance = players
+      .filter(player => player && typeof player.x === 'number' && typeof player.y === 'number')
+      .map(player => {
+        const distance = (player.x - x) ** 2 + (player.y - y) ** 2;
+        return { player, distance };
+      })
+      .filter(({ distance }) => distance < SELECTION_RADIUS * SELECTION_RADIUS)
+      .sort((a, b) => a.distance - b.distance);
+
+    return playersWithDistance.map(({ player }) => player);
   } catch (error) {
-    console.error('Error in findNearestPlayer:', error);
-    return null;
+    console.error('Error in findPlayersInTouchArea:', error);
+    return [];
   }
+};
+
+// 겹친 토큰들 중에서 순환 선택
+export const selectNextPlayerInArea = (
+  x: number,
+  y: number,
+  players: Player[],
+  currentSelectedId: string | null
+): Player | null => {
+  const playersInArea = findPlayersInTouchArea(x, y, players);
+
+  if (playersInArea.length === 0) return null;
+  if (playersInArea.length === 1) return playersInArea[0];
+
+  // 현재 선택된 플레이어가 터치 영역에 있는지 확인
+  const currentIndex = playersInArea.findIndex(p => p.id === currentSelectedId);
+
+  if (currentIndex === -1) {
+    // 현재 선택된 플레이어가 없거나 터치 영역에 없으면 첫 번째 선택
+    return playersInArea[0];
+  }
+
+  // 다음 플레이어로 순환 (마지막이면 첫 번째로)
+  const nextIndex = (currentIndex + 1) % playersInArea.length;
+  return playersInArea[nextIndex];
+};
+
+// 기존 함수 유지 (하위 호환성)
+export const findNearestPlayer = (x: number, y: number, players: Player[]): Player | null => {
+  const playersInArea = findPlayersInTouchArea(x, y, players);
+  return playersInArea.length > 0 ? playersInArea[0] : null;
 };
