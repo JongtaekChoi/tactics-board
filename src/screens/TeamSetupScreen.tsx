@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -49,12 +48,9 @@ const TACTICAL_OPTIONS_OTHER = [
   { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
 ] as const;
 
-type SetupStep = 'team-selection' | 'home-team' | 'away-team' | 'count' | 'tactical' | 'complete';
-
 export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenProps) {
   const { boardId } = route.params;
 
-  const [currentStep, setCurrentStep] = useState<SetupStep>('team-selection');
   const [config, setConfig] = useState<TeamSetupConfig>({
     teamSelection: 'both-teams',
     playerCount: 11,
@@ -82,88 +78,41 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
     }
   };
 
-  // 애니메이션 values
-  const countOpacity = useSharedValue(0);
-  const countTranslateY = useSharedValue(30);
-  const tacticalOpacity = useSharedValue(0);
-  const tacticalTranslateY = useSharedValue(30);
-
-  // 팀 선택 방식 결정 (home-only vs both-teams)
+  // 통합 폼 핸들러들
   const handleTeamSelection = (teamSelection: 'home-only' | 'both-teams') => {
     setConfig(prev => ({ ...prev, teamSelection }));
-
-    // 팀이 없으면 바로 인원 수로, 있으면 홈팀 선택으로
-    if (teams.length === 0) {
-      setCurrentStep('count');
-      countOpacity.value = withTiming(1, { duration: 500 });
-      countTranslateY.value = withSpring(0);
-    } else {
-      setCurrentStep('home-team');
-    }
   };
 
-  // 홈팀 선택
   const handleHomeTeamSelection = (teamId: string) => {
     setConfig(prev => ({ ...prev, homeTeamId: teamId }));
-
-    if (config.teamSelection === 'both-teams') {
-      setCurrentStep('away-team');
-    } else {
-      setCurrentStep('count');
-      countOpacity.value = withTiming(1, { duration: 500 });
-      countTranslateY.value = withSpring(0);
-    }
   };
 
-  // 어웨이팀 선택
   const handleAwayTeamSelection = (teamId: string) => {
     setConfig(prev => ({ ...prev, awayTeamId: teamId }));
-    setCurrentStep('count');
-    countOpacity.value = withTiming(1, { duration: 500 });
-    countTranslateY.value = withSpring(0);
   };
 
   const handlePlayerCountSelection = (playerCount: number) => {
     setConfig(prev => ({ ...prev, playerCount }));
-    // 슬라이더는 실시간으로 업데이트되므로 바로 전술 단계로
-    if (currentStep === 'count') {
-      setCurrentStep('tactical');
-      // 전술 유형 섹션 애니메이션
-      tacticalOpacity.value = withTiming(1, { duration: 500 });
-      tacticalTranslateY.value = withSpring(0);
-    }
-  };
-
-  const handlePlayerCountConfirm = () => {
-    setCurrentStep('tactical');
-    
-    // 전술 유형 섹션 애니메이션
-    tacticalOpacity.value = withTiming(1, { duration: 500 });
-    tacticalTranslateY.value = withSpring(0);
   };
 
   const handleTacticalSelection = (tacticalType: 'free' | '4-4-2' | '4-3-3' | '3-5-2' | '4-2-3-1' | '5-3-2' | 'setpiece') => {
     setConfig(prev => ({ ...prev, tacticalType }));
-    setCurrentStep('complete');
   };
 
   const handleContinue = () => {
-    navigation.navigate('Board', { 
-      boardId, 
-      teamConfig: config 
+    navigation.navigate('Board', {
+      boardId,
+      teamConfig: config
     });
   };
 
-  // 애니메이션 스타일
-  const countAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: countOpacity.value,
-    transform: [{ translateY: countTranslateY.value }],
-  }));
-
-  const tacticalAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: tacticalOpacity.value,
-    transform: [{ translateY: tacticalTranslateY.value }],
-  }));
+  // 폼 유효성 검사
+  const isFormValid = () => {
+    if (config.teamSelection === 'both-teams') {
+      return config.homeTeamId !== undefined && config.awayTeamId !== undefined;
+    }
+    return config.homeTeamId !== undefined;
+  };
 
   const OptionCard = ({ 
     title, 
@@ -208,68 +157,64 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Step 1: 팀 선택 방식 */}
-        {currentStep === 'team-selection' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>팀 선택</Text>
-            <Text style={styles.sectionDescription}>어떤 팀을 배치할까요?</Text>
+        {/* 1. 팀 선택 방식 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>팀 선택</Text>
+          <Text style={styles.sectionDescription}>어떤 팀을 배치할까요?</Text>
+          <View style={styles.optionsGrid}>
+            {TEAM_OPTIONS.map((option) => (
+              <OptionCard
+                key={option.value}
+                title={option.label}
+                value={option.value}
+                isSelected={config.teamSelection === option.value}
+                onPress={() => handleTeamSelection(option.value)}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* 2. 홈팀 선택 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>홈팀 선택</Text>
+          <Text style={styles.sectionDescription}>홈팀을 선택하세요</Text>
+
+          {isLoadingTeams ? (
+            <Text style={styles.loadingText}>팀 목록을 불러오는 중...</Text>
+          ) : teams.length === 0 ? (
+            <View style={styles.noTeamsContainer}>
+              <Text style={styles.noTeamsText}>등록된 팀이 없습니다.</Text>
+              <Button
+                variant="primary"
+                onPress={() => navigation.navigate('TeamList')}
+                style={styles.createTeamButton}
+              >
+                <Text style={styles.createTeamButtonText}>새 팀 만들기</Text>
+              </Button>
+            </View>
+          ) : (
             <View style={styles.optionsGrid}>
-              {TEAM_OPTIONS.map((option) => (
+              {teams.map((team) => (
                 <OptionCard
-                  key={option.value}
-                  title={option.label}
-                  value={option.value}
-                  isSelected={config.teamSelection === option.value}
-                  onPress={() => handleTeamSelection(option.value)}
+                  key={team.id}
+                  title={team.name}
+                  value={team.id}
+                  isSelected={config.homeTeamId === team.id}
+                  onPress={() => handleHomeTeamSelection(team.id)}
                 />
               ))}
+              <OptionCard
+                title="팀 없이 진행"
+                value=""
+                isSelected={config.homeTeamId === ''}
+                onPress={() => handleHomeTeamSelection('')}
+              />
             </View>
-          </View>
-        )}
+          )}
+        </View>
 
-        {/* Step 2: 홈팀 선택 */}
-        {currentStep === 'home-team' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>홈팀 선택</Text>
-            <Text style={styles.sectionDescription}>홈팀을 선택하세요</Text>
-
-            {isLoadingTeams ? (
-              <Text style={styles.loadingText}>팀 목록을 불러오는 중...</Text>
-            ) : teams.length === 0 ? (
-              <View style={styles.noTeamsContainer}>
-                <Text style={styles.noTeamsText}>등록된 팀이 없습니다.</Text>
-                <Button
-                  variant="primary"
-                  onPress={() => navigation.navigate('TeamList')}
-                  style={styles.createTeamButton}
-                >
-                  <Text style={styles.createTeamButtonText}>새 팀 만들기</Text>
-                </Button>
-              </View>
-            ) : (
-              <View style={styles.optionsGrid}>
-                {teams.map((team) => (
-                  <OptionCard
-                    key={team.id}
-                    title={team.name}
-                    value={team.id}
-                    isSelected={config.homeTeamId === team.id}
-                    onPress={() => handleHomeTeamSelection(team.id)}
-                  />
-                ))}
-                <OptionCard
-                  title="팀 없이 진행"
-                  value=""
-                  isSelected={config.homeTeamId === ''}
-                  onPress={() => handleHomeTeamSelection('')}
-                />
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Step 3: 어웨이팀 선택 */}
-        {currentStep === 'away-team' && (
+        {/* 3. 어웨이팀 선택 (양팀 모드일 때만) */}
+        {config.teamSelection === 'both-teams' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>어웨이팀 선택</Text>
             <Text style={styles.sectionDescription}>어웨이팀을 선택하세요</Text>
@@ -293,81 +238,66 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
           </View>
         )}
 
-        {/* Step 4: 인원 수 (슬라이더 UI) */}
-        {currentStep === 'count' && (
-          <Animated.View style={[styles.section, countAnimatedStyle]}>
-            <Text style={styles.sectionTitle}>인원 수</Text>
-            <Text style={styles.sectionDescription}>
-              {config.playerCount}명 - {PLAYER_COUNT_DESCRIPTIONS[config.playerCount]}
-            </Text>
-            
-            <View style={styles.sliderContainer}>
-              <View style={styles.sliderLabels}>
-                <Text style={styles.sliderLabel}>3명</Text>
-                <Text style={styles.sliderLabel}>11명</Text>
-              </View>
-              
-              <Slider
-                style={styles.slider}
-                minimumValue={3}
-                maximumValue={11}
-                step={1}
-                value={config.playerCount}
-                onValueChange={handlePlayerCountSelection}
-                minimumTrackTintColor={COLORS.PRIMARY}
-                maximumTrackTintColor="#333"
-                thumbTintColor={COLORS.PRIMARY}
+        {/* 4. 인원 수 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>인원 수</Text>
+          <Text style={styles.sectionDescription}>
+            {config.playerCount}명 - {PLAYER_COUNT_DESCRIPTIONS[config.playerCount]}
+          </Text>
+
+          <View style={styles.sliderContainer}>
+            <View style={styles.sliderLabels}>
+              <Text style={styles.sliderLabel}>3명</Text>
+              <Text style={styles.sliderLabel}>11명</Text>
+            </View>
+
+            <Slider
+              style={styles.slider}
+              minimumValue={3}
+              maximumValue={11}
+              step={1}
+              value={config.playerCount}
+              onValueChange={handlePlayerCountSelection}
+              minimumTrackTintColor={COLORS.PRIMARY}
+              maximumTrackTintColor="#333"
+              thumbTintColor={COLORS.PRIMARY}
+            />
+
+            <View style={styles.playerCountDisplay}>
+              <Text style={styles.playerCountNumber}>{config.playerCount}</Text>
+              <Text style={styles.playerCountUnit}>명</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 5. 전술 유형 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>전술 유형</Text>
+          <Text style={styles.sectionDescription}>어떤 포메이션을 사용할까요?</Text>
+          <View style={styles.optionsGrid}>
+            {(config.playerCount === 11 ? TACTICAL_OPTIONS_11v11 : TACTICAL_OPTIONS_OTHER).map((option) => (
+              <OptionCard
+                key={option.value}
+                title={option.label}
+                value={option.value}
+                isSelected={config.tacticalType === option.value}
+                onPress={() => handleTacticalSelection(option.value)}
               />
-              
-              <View style={styles.playerCountDisplay}>
-                <Text style={styles.playerCountNumber}>{config.playerCount}</Text>
-                <Text style={styles.playerCountUnit}>명</Text>
-              </View>
-            </View>
-
-            {currentStep === 'count' && (
-              <Button
-                variant="primary"
-                onPress={handlePlayerCountConfirm}
-                style={styles.confirmButton}
-              >
-                <Text style={styles.confirmButtonText}>다음 단계</Text>
-              </Button>
-            )}
-          </Animated.View>
-        )}
-
-        {/* Step 3: 전술 유형 (조건부 애니메이션) */}
-        {(currentStep === 'tactical' || currentStep === 'complete') && (
-          <Animated.View style={[styles.section, tacticalAnimatedStyle]}>
-            <Text style={styles.sectionTitle}>전술 유형</Text>
-            <Text style={styles.sectionDescription}>어떤 포메이션을 사용할까요?</Text>
-            <View style={styles.optionsGrid}>
-              {(config.playerCount === 11 ? TACTICAL_OPTIONS_11v11 : TACTICAL_OPTIONS_OTHER).map((option) => (
-                <OptionCard
-                  key={option.value}
-                  title={option.label}
-                  value={option.value}
-                  isSelected={config.tacticalType === option.value}
-                  onPress={() => handleTacticalSelection(option.value)}
-                />
-              ))}
-            </View>
-          </Animated.View>
-        )}
+            ))}
+          </View>
+        </View>
       </ScrollView>
 
-      {currentStep === 'complete' && (
-        <View style={styles.footer}>
-          <Button 
-            onPress={handleContinue}
-            variant="primary"
-            style={styles.continueButton}
-          >
-            <Text style={styles.continueText}>전술보드 시작</Text>
-          </Button>
-        </View>
-      )}
+      {/* 하단 시작 버튼 */}
+      <View style={styles.footer}>
+        <Button
+          onPress={handleContinue}
+          variant="primary"
+          style={styles.continueButton}
+        >
+          <Text style={styles.continueText}>전술보드 시작</Text>
+        </Button>
+      </View>
     </SafeAreaView>
   );
 }
@@ -478,17 +408,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     marginLeft: 4,
-  },
-  confirmButton: {
-    backgroundColor: COLORS.PRIMARY,
-    marginTop: 24,
-    paddingVertical: 12,
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   loadingText: {
     color: '#888',

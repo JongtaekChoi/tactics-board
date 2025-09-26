@@ -31,6 +31,7 @@ export const migratePlayerData = (players: LegacyPlayerData): Player[] => {
   }));
 };
 
+
 /**
  * 안전한 팀 데이터 로딩 (마이그레이션 지원)
  */
@@ -80,6 +81,7 @@ export const createTeam = async (input: CreateTeamInput): Promise<Team> => {
     players: input.players.map((player, index) => ({
       id: `player-${Date.now()}-${index}`,
       name: player.name.trim(),
+      displayName: player.displayName,
       position: player.position,
       number: player.number,
     })),
@@ -116,6 +118,7 @@ export const updateTeam = async (input: UpdateTeamInput): Promise<Team> => {
             ? existingTeam.players[index]?.id || `player-${Date.now()}-${index}`
             : `player-${Date.now()}-${index}`,
           name: player.name.trim(),
+          displayName: player.displayName,
           position: player.position,
           number: player.number,
         }))

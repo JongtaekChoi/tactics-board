@@ -47,6 +47,7 @@ export default function TeamEditScreen() {
           setTeamName(team.name);
           setPlayers(team.players.map(player => ({
             name: player.name,
+            displayName: player.displayName,
             position: player.position,
             number: player.number,
           })));
@@ -77,8 +78,29 @@ export default function TeamEditScreen() {
       return;
     }
 
-    setPlayers([...players, { name: trimmedName }]);
+    setPlayers([...players, {
+      name: trimmedName,
+      displayName: '',
+      number: undefined
+    }]);
     setNewPlayerName('');
+  };
+
+  /**
+   * 선수 정보 업데이트
+   */
+  const handleUpdatePlayer = (index: number, field: keyof Omit<Player, 'id'>, value: any) => {
+    const updatedPlayers = [...players];
+    updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
+    setPlayers(updatedPlayers);
+  };
+
+  /**
+   * 등번호 중복 검사
+   */
+  const validatePlayerNumbers = (): boolean => {
+    const numbers = players.map(p => p.number).filter(Boolean);
+    return numbers.length === new Set(numbers).size;
   };
 
   /**
@@ -116,6 +138,12 @@ export default function TeamEditScreen() {
       return;
     }
 
+    // 등번호 중복 검사
+    if (!validatePlayerNumbers()) {
+      Alert.alert('알림', '등번호가 중복되었습니다. 다른 번호를 사용해주세요.');
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -144,19 +172,50 @@ export default function TeamEditScreen() {
   };
 
   /**
-   * 선수 아이템 렌더러
+   * 선수 인라인 편집 아이템 렌더러
    */
   const renderPlayerItem = ({ item, index }: { item: Omit<Player, 'id'>; index: number }) => (
-    <View style={styles.playerItem}>
-      <View style={styles.playerInfo}>
-        <Text style={styles.playerName}>{item.name}</Text>
-        {/* v1.2.0에서 포지션 정보 추가 예정 */}
+    <View style={styles.playerEditRow}>
+      <View style={styles.playerIndexContainer}>
+        <Text style={styles.playerIndex}>{index + 1}</Text>
       </View>
+
+      <TextInput
+        style={styles.nameInput}
+        value={item.name}
+        onChangeText={(text) => handleUpdatePlayer(index, 'name', text)}
+        placeholder="이름"
+        placeholderTextColor="#666"
+        maxLength={20}
+      />
+
+      <TextInput
+        style={styles.displayNameInput}
+        value={item.displayName || ''}
+        onChangeText={(text) => handleUpdatePlayer(index, 'displayName', text)}
+        placeholder="표시명"
+        placeholderTextColor="#666"
+        maxLength={3}
+      />
+
+      <TextInput
+        style={styles.numberInput}
+        value={item.number?.toString() || ''}
+        onChangeText={(text) => {
+          const number = text === '' ? undefined : parseInt(text);
+          handleUpdatePlayer(index, 'number', number);
+        }}
+        placeholder="번호"
+        placeholderTextColor="#666"
+        keyboardType="numeric"
+        maxLength={2}
+      />
+
       <TouchableOpacity
         style={styles.removeButton}
         onPress={() => handleRemovePlayer(index)}
       >
-        <Text style={styles.removeButtonText}>제거</Text>
+        <Text style={styles.removeButtonText}>🗑️</Text>
       </TouchableOpacity>
     </View>
   );
@@ -204,6 +263,21 @@ export default function TeamEditScreen() {
               <Text style={styles.addButtonText}>추가</Text>
             </TouchableOpacity>
           </View>
+
+          {/* 컬럼 헤더 */}
+          {players.length > 0 && (
+            <View style={styles.playerHeaderRow}>
+              <View style={styles.playerIndexContainer}>
+                <Text style={styles.headerText}>#</Text>
+              </View>
+              <Text style={[styles.headerText, styles.nameHeader]}>이름</Text>
+              <Text style={[styles.headerText, styles.displayNameHeader]}>표시명</Text>
+              <Text style={[styles.headerText, styles.numberHeader]}>번호</Text>
+              <View style={styles.removeButton}>
+                <Text style={styles.headerText}>삭제</Text>
+              </View>
+            </View>
+          )}
 
           {/* 선수 목록 */}
           <FlatList
@@ -289,35 +363,97 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   playerList: {
-    maxHeight: 300,
+    maxHeight: 400,
+    marginTop: 8,
   },
-  playerItem: {
-    backgroundColor: '#1a1a1a',
+  // 인라인 편집 스타일
+  playerHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    marginBottom: 8,
+  },
+  playerEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     marginBottom: 8,
   },
-  playerInfo: {
-    flex: 1,
+  playerIndexContainer: {
+    width: 30,
+    alignItems: 'center',
+    marginRight: 8,
   },
-  playerName: {
-    color: '#fff',
+  playerIndex: {
+    color: '#888',
     fontSize: 14,
     fontWeight: '500',
   },
-  removeButton: {
-    backgroundColor: '#f44336',
+  nameInput: {
+    flex: 3,
+    backgroundColor: '#2a2a2a',
+    color: 'white',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 6,
+    fontSize: 14,
+    marginRight: 8,
+  },
+  displayNameInput: {
+    flex: 2,
+    backgroundColor: '#2a2a2a',
+    color: 'white',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    fontSize: 14,
+    marginRight: 8,
+    textAlign: 'center',
+  },
+  numberInput: {
+    flex: 1,
+    backgroundColor: '#2a2a2a',
+    color: 'white',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    fontSize: 14,
+    marginRight: 8,
+    textAlign: 'center',
+  },
+  headerText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  nameHeader: {
+    flex: 3,
+    marginRight: 8,
+  },
+  displayNameHeader: {
+    flex: 2,
+    marginRight: 8,
+    textAlign: 'center',
+  },
+  numberHeader: {
+    flex: 1,
+    marginRight: 8,
+    textAlign: 'center',
+  },
+  removeButton: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
   },
   removeButtonText: {
-    color: '#fff',
-    fontSize: 12,
+    fontSize: 16,
   },
   footer: {
     padding: 20,

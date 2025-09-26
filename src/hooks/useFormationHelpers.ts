@@ -208,10 +208,11 @@ export const useFormationHelpers = () => {
       return Array.from({ length: count }).map((_, i) => {
         const pos = positions[i] || positions[positions.length - 1]; // fallback to last position
 
-        // 팀이 있고 해당 인덱스에 선수가 있으면 실제 이름 사용
+        // 팀이 있고 해당 인덱스에 선수가 있으면 displayName 또는 이름 사용
         let label = `${i + 1}`;
         if (team && team.players[i]) {
-          label = team.players[i].name;
+          const player = team.players[i];
+          label = player.displayName || player.name || `${i + 1}`;
         }
 
         return {

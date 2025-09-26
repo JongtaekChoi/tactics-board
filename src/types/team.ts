@@ -4,6 +4,7 @@
 export interface Player {
   id: string;
   name: string;
+  displayName?: string; // 토큰에 표시할 짧은 이름 (예: "홍길동" → "홍", "이영희" → "이영")
   // v1.2.0에서 추가 예정
   position?: 'GK' | 'DEF' | 'MID' | 'FWD';
   number?: number;
