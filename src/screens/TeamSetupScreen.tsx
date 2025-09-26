@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -15,10 +15,6 @@ type TeamSetupScreenProps = {
   route: RouteProp<RootStackParamList, 'TeamSetup'>;
 };
 
-const TEAM_OPTIONS = [
-  { value: 'both-teams', label: '양팀 모두', description: '홈팀 vs 어웨이팀' },
-  { value: 'home-only', label: '우리팀만', description: '공격 전술 연습' },
-] as const;
 
 // 인원수별 설명 매핑
 const PLAYER_COUNT_DESCRIPTIONS: Record<number, string> = {
@@ -52,16 +48,20 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
   const { boardId } = route.params;
 
   const [config, setConfig] = useState<TeamSetupConfig>({
-    teamSelection: 'both-teams',
+    teamSelection: 'both-teams', // 자동으로 결정됨
     playerCount: 11,
     tacticalType: 'free',
     homeTeamId: undefined,
     awayTeamId: undefined,
   });
 
+
   // 팀 목록 로드
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
+
+  // 어웨이팀 활성화 상태
+  const [isAwayTeamEnabled, setIsAwayTeamEnabled] = useState(false);
 
   useEffect(() => {
     loadAllTeams();
@@ -78,17 +78,39 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
     }
   };
 
-  // 통합 폼 핸들러들
-  const handleTeamSelection = (teamSelection: 'home-only' | 'both-teams') => {
-    setConfig(prev => ({ ...prev, teamSelection }));
-  };
-
+  // 통합 폼 핸들러들 (토글 방식)
   const handleHomeTeamSelection = (teamId: string) => {
     setConfig(prev => ({ ...prev, homeTeamId: teamId }));
   };
 
+  const handleAwayTeamToggle = (enabled: boolean) => {
+    setIsAwayTeamEnabled(enabled);
+    if (!enabled) {
+      // 어웨이팀 비활성화 시 선택 초기화
+      setConfig(prev => ({
+        ...prev,
+        awayTeamId: undefined,
+        teamSelection: 'home-only'
+      }));
+    } else {
+      // 어웨이팀 활성화 시 팀 선택 모드로 전환
+      setConfig(prev => ({
+        ...prev,
+        teamSelection: 'both-teams'
+      }));
+    }
+  };
+
   const handleAwayTeamSelection = (teamId: string) => {
     setConfig(prev => ({ ...prev, awayTeamId: teamId }));
+  };
+
+  // 설정에서 팀 선택 모드 결정
+  const getTeamSelectionFromConfig = (config: TeamSetupConfig): 'home-only' | 'both-teams' => {
+    if (config.homeTeamId && config.awayTeamId) {
+      return 'both-teams';
+    }
+    return 'home-only';
   };
 
   const handlePlayerCountSelection = (playerCount: number) => {
@@ -106,23 +128,14 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
     });
   };
 
-  // 폼 유효성 검사
-  const isFormValid = () => {
-    if (config.teamSelection === 'both-teams') {
-      return config.homeTeamId !== undefined && config.awayTeamId !== undefined;
-    }
-    return config.homeTeamId !== undefined;
-  };
 
-  const OptionCard = ({ 
-    title, 
-    value, 
-    isSelected, 
-    onPress 
-  }: { 
-    title: string; 
-    value: any; 
-    isSelected: boolean; 
+  const OptionCard = ({
+    title,
+    isSelected,
+    onPress
+  }: {
+    title: string;
+    isSelected: boolean;
     onPress: () => void;
   }) => {
     const cardStyle = isSelected 
@@ -157,24 +170,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 1. 팀 선택 방식 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>팀 선택</Text>
-          <Text style={styles.sectionDescription}>어떤 팀을 배치할까요?</Text>
-          <View style={styles.optionsGrid}>
-            {TEAM_OPTIONS.map((option) => (
-              <OptionCard
-                key={option.value}
-                title={option.label}
-                value={option.value}
-                isSelected={config.teamSelection === option.value}
-                onPress={() => handleTeamSelection(option.value)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* 2. 홈팀 선택 */}
+        {/* 1. 홈팀 선택 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>홈팀 선택</Text>
           <Text style={styles.sectionDescription}>홈팀을 선택하세요</Text>
@@ -198,14 +194,13 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
                 <OptionCard
                   key={team.id}
                   title={team.name}
-                  value={team.id}
+                  
                   isSelected={config.homeTeamId === team.id}
                   onPress={() => handleHomeTeamSelection(team.id)}
                 />
               ))}
               <OptionCard
                 title="팀 없이 진행"
-                value=""
                 isSelected={config.homeTeamId === ''}
                 onPress={() => handleHomeTeamSelection('')}
               />
@@ -213,32 +208,61 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
           )}
         </View>
 
-        {/* 3. 어웨이팀 선택 (양팀 모드일 때만) */}
-        {config.teamSelection === 'both-teams' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>어웨이팀 선택</Text>
-            <Text style={styles.sectionDescription}>어웨이팀을 선택하세요</Text>
-            <View style={styles.optionsGrid}>
-              {teams.filter(team => team.id !== config.homeTeamId).map((team) => (
-                <OptionCard
-                  key={team.id}
-                  title={team.name}
-                  value={team.id}
-                  isSelected={config.awayTeamId === team.id}
-                  onPress={() => handleAwayTeamSelection(team.id)}
-                />
-              ))}
-              <OptionCard
-                title="팀 없이 진행"
-                value=""
-                isSelected={config.awayTeamId === ''}
-                onPress={() => handleAwayTeamSelection('')}
-              />
+        {/* 2. 어웨이팀 설정 */}
+        <View style={styles.section}>
+          <View style={styles.toggleHeader}>
+            <View style={styles.toggleInfo}>
+              <Text style={styles.sectionTitle}>어웨이팀 설정</Text>
+              <Text style={styles.sectionDescription}>
+                {isAwayTeamEnabled ? '양팀 대결 모드' : '우리팀만 모드'}
+              </Text>
             </View>
+            <Switch
+              value={isAwayTeamEnabled}
+              onValueChange={handleAwayTeamToggle}
+              trackColor={{ false: '#333', true: COLORS.PRIMARY }}
+              thumbColor={isAwayTeamEnabled ? '#fff' : '#888'}
+            />
           </View>
-        )}
 
-        {/* 4. 인원 수 */}
+          {isAwayTeamEnabled && (
+            <View style={styles.awayTeamSelection}>
+              <Text style={styles.subSectionTitle}>어웨이팀 선택</Text>
+              {isLoadingTeams ? (
+                <Text style={styles.loadingText}>팀 목록을 불러오는 중...</Text>
+              ) : teams.length === 0 ? (
+                <View style={styles.noTeamsContainer}>
+                  <Text style={styles.noTeamsText}>등록된 팀이 없습니다.</Text>
+                  <Button
+                    variant="primary"
+                    onPress={() => navigation.navigate('TeamList')}
+                    style={styles.createTeamButton}
+                  >
+                    <Text style={styles.createTeamButtonText}>새 팀 만들기</Text>
+                  </Button>
+                </View>
+              ) : (
+                <View style={styles.optionsGrid}>
+                  {teams.filter(team => team.id !== config.homeTeamId).map((team) => (
+                    <OptionCard
+                      key={team.id}
+                      title={team.name}
+                      isSelected={config.awayTeamId === team.id}
+                      onPress={() => handleAwayTeamSelection(team.id)}
+                    />
+                  ))}
+                  <OptionCard
+                    title="팀 없이 진행"
+                    isSelected={config.awayTeamId === ''}
+                    onPress={() => handleAwayTeamSelection('')}
+                  />
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* 3. 인원 수 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>인원 수</Text>
           <Text style={styles.sectionDescription}>
@@ -270,7 +294,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
           </View>
         </View>
 
-        {/* 5. 전술 유형 */}
+        {/* 4. 전술 유형 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>전술 유형</Text>
           <Text style={styles.sectionDescription}>어떤 포메이션을 사용할까요?</Text>
@@ -279,7 +303,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
               <OptionCard
                 key={option.value}
                 title={option.label}
-                value={option.value}
+                
                 isSelected={config.tacticalType === option.value}
                 onPress={() => handleTacticalSelection(option.value)}
               />
@@ -336,6 +360,25 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
     marginBottom: 16,
+  },
+  // 토글 관련 스타일
+  toggleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  toggleInfo: {
+    flex: 1,
+  },
+  awayTeamSelection: {
+    marginTop: 8,
+  },
+  subSectionTitle: {
+    color: '#ccc',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 12,
   },
   optionsGrid: {
     gap: 12,
