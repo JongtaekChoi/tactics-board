@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import './src/i18n'; // i18n 초기화
 import { RootStackParamList } from './src/types/navigation';
 import { BoardProvider } from './src/contexts/BoardContext';
 import HomeScreen from './src/screens/HomeScreen';

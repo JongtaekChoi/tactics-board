@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, Switch } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Switch, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import { Team } from '../types/team';
 import { loadTeams } from '../services/teamService';
 import Button from '../components/ui/Button';
 import { COLORS } from '../utils/constants';
+import { useI18n } from '../hooks/useI18n';
 
 type TeamSetupScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'TeamSetup'>;
@@ -16,36 +17,11 @@ type TeamSetupScreenProps = {
 };
 
 
-// 인원수별 설명 매핑
-const PLAYER_COUNT_DESCRIPTIONS: Record<number, string> = {
-  3: '기초 드릴',
-  4: '패스 연습', 
-  5: '실내 축구',
-  6: '소그룹 연습',
-  7: 'Futsal / 유소년',
-  8: '확장 연습',
-  9: '준경기',
-  10: '거의 풀팀',
-  11: '정규 경기'
-};
 
-const TACTICAL_OPTIONS_11v11 = [
-  { value: 'free', label: '자유 전술', description: '기본 2줄 대형' },
-  { value: '4-4-2', label: '4-4-2 클래식', description: '균형 잡힌 포메이션' },
-  { value: '4-3-3', label: '4-3-3 공격형', description: '공격적 포메이션' },
-  { value: '3-5-2', label: '3-5-2 중원형', description: '중원 장악 포메이션' },
-  { value: '4-2-3-1', label: '4-2-3-1 현대형', description: '현대적 포메이션' },
-  { value: '5-3-2', label: '5-3-2 수비형', description: '수비적 포메이션' },
-  { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
-] as const;
-
-const TACTICAL_OPTIONS_OTHER = [
-  { value: 'free', label: '자유 전술', description: '기본 대형' },
-  { value: 'setpiece', label: '세트피스', description: '코너킥 전술' },
-] as const;
 
 export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenProps) {
   const { boardId } = route.params;
+  const { t, changeLanguage, currentLanguage } = useI18n();
 
   const [config, setConfig] = useState<TeamSetupConfig>({
     teamSelection: 'both-teams', // 자동으로 결정됨
@@ -161,31 +137,41 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Button
-          onPress={() => navigation.goBack()}
-          icon="arrow-back"
-          size="small"
-        />
-        <Text style={styles.title}>팀 구성 설정</Text>
+        <View style={styles.headerLeft}>
+          <Button
+            onPress={() => navigation.goBack()}
+            icon="arrow-back"
+            size="small"
+          />
+        </View>
+        <Text style={styles.title}>{t('teamSetup.title')}</Text>
+        <TouchableOpacity
+          style={styles.languageButton}
+          onPress={() => changeLanguage(currentLanguage === 'ko' ? 'en' : 'ko')}
+        >
+          <Text style={styles.languageButtonText}>
+            {currentLanguage === 'ko' ? 'EN' : '한'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 1. 홈팀 선택 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>홈팀 선택</Text>
-          <Text style={styles.sectionDescription}>홈팀을 선택하세요</Text>
+          <Text style={styles.sectionTitle}>{t('teamSetup.homeTeam.title')}</Text>
+          <Text style={styles.sectionDescription}>{t('teamSetup.homeTeam.description')}</Text>
 
           {isLoadingTeams ? (
-            <Text style={styles.loadingText}>팀 목록을 불러오는 중...</Text>
+            <Text style={styles.loadingText}>{t('teamSetup.common.loading')}</Text>
           ) : teams.length === 0 ? (
             <View style={styles.noTeamsContainer}>
-              <Text style={styles.noTeamsText}>등록된 팀이 없습니다.</Text>
+              <Text style={styles.noTeamsText}>{t('teamSetup.common.noTeams')}</Text>
               <Button
                 variant="primary"
                 onPress={() => navigation.navigate('TeamList')}
                 style={styles.createTeamButton}
               >
-                <Text style={styles.createTeamButtonText}>새 팀 만들기</Text>
+                <Text style={styles.createTeamButtonText}>{t('teamSetup.common.createTeam')}</Text>
               </Button>
             </View>
           ) : (
@@ -200,7 +186,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
                 />
               ))}
               <OptionCard
-                title="팀 없이 진행"
+                title={t('teamSetup.common.noTeam')}
                 isSelected={config.homeTeamId === ''}
                 onPress={() => handleHomeTeamSelection('')}
               />
@@ -212,9 +198,9 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
         <View style={styles.section}>
           <View style={styles.toggleHeader}>
             <View style={styles.toggleInfo}>
-              <Text style={styles.sectionTitle}>어웨이팀 설정</Text>
+              <Text style={styles.sectionTitle}>{t('teamSetup.awayTeam.title')}</Text>
               <Text style={styles.sectionDescription}>
-                {isAwayTeamEnabled ? '양팀 대결 모드' : '우리팀만 모드'}
+                {isAwayTeamEnabled ? t('teamSetup.awayTeam.description') : t('teamSetup.awayTeam.homeOnlyMode')}
               </Text>
             </View>
             <Switch
@@ -227,18 +213,18 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
 
           {isAwayTeamEnabled && (
             <View style={styles.awayTeamSelection}>
-              <Text style={styles.subSectionTitle}>어웨이팀 선택</Text>
+              <Text style={styles.subSectionTitle}>{t('teamSetup.awayTeam.selectTitle')}</Text>
               {isLoadingTeams ? (
-                <Text style={styles.loadingText}>팀 목록을 불러오는 중...</Text>
+                <Text style={styles.loadingText}>{t('teamSetup.common.loading')}</Text>
               ) : teams.length === 0 ? (
                 <View style={styles.noTeamsContainer}>
-                  <Text style={styles.noTeamsText}>등록된 팀이 없습니다.</Text>
+                  <Text style={styles.noTeamsText}>{t('teamSetup.common.noTeams')}</Text>
                   <Button
                     variant="primary"
                     onPress={() => navigation.navigate('TeamList')}
                     style={styles.createTeamButton}
                   >
-                    <Text style={styles.createTeamButtonText}>새 팀 만들기</Text>
+                    <Text style={styles.createTeamButtonText}>{t('teamSetup.common.createTeam')}</Text>
                   </Button>
                 </View>
               ) : (
@@ -252,7 +238,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
                     />
                   ))}
                   <OptionCard
-                    title="팀 없이 진행"
+                    title={t('teamSetup.common.noTeam')}
                     isSelected={config.awayTeamId === ''}
                     onPress={() => handleAwayTeamSelection('')}
                   />
@@ -264,15 +250,15 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
 
         {/* 3. 인원 수 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>인원 수</Text>
+          <Text style={styles.sectionTitle}>{t('teamSetup.playerCount.title')}</Text>
           <Text style={styles.sectionDescription}>
-            {config.playerCount}명 - {PLAYER_COUNT_DESCRIPTIONS[config.playerCount]}
+            {config.playerCount}{t('teamSetup.playerCount.unit')} - {t(`teamSetup.playerCount.descriptions.${config.playerCount}`)}
           </Text>
 
           <View style={styles.sliderContainer}>
             <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabel}>3명</Text>
-              <Text style={styles.sliderLabel}>11명</Text>
+              <Text style={styles.sliderLabel}>3{t('teamSetup.playerCount.unit')}</Text>
+              <Text style={styles.sliderLabel}>11{t('teamSetup.playerCount.unit')}</Text>
             </View>
 
             <Slider
@@ -289,23 +275,25 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
 
             <View style={styles.playerCountDisplay}>
               <Text style={styles.playerCountNumber}>{config.playerCount}</Text>
-              <Text style={styles.playerCountUnit}>명</Text>
+              <Text style={styles.playerCountUnit}>{t('teamSetup.playerCount.unit')}</Text>
             </View>
           </View>
         </View>
 
         {/* 4. 전술 유형 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>전술 유형</Text>
-          <Text style={styles.sectionDescription}>어떤 포메이션을 사용할까요?</Text>
+          <Text style={styles.sectionTitle}>{t('teamSetup.tactical.title')}</Text>
+          <Text style={styles.sectionDescription}>{t('teamSetup.tactical.description')}</Text>
           <View style={styles.optionsGrid}>
-            {(config.playerCount === 11 ? TACTICAL_OPTIONS_11v11 : TACTICAL_OPTIONS_OTHER).map((option) => (
+            {(config.playerCount === 11
+              ? ['free', '4-4-2', '4-3-3', '3-5-2', '4-2-3-1', '5-3-2', 'setpiece']
+              : ['free', 'setpiece']
+            ).map((formation) => (
               <OptionCard
-                key={option.value}
-                title={option.label}
-                
-                isSelected={config.tacticalType === option.value}
-                onPress={() => handleTacticalSelection(option.value)}
+                key={formation}
+                title={t(`teamSetup.tactical.formations.${formation}`)}
+                isSelected={config.tacticalType === formation}
+                onPress={() => handleTacticalSelection(formation as any)}
               />
             ))}
           </View>
@@ -319,7 +307,7 @@ export default function TeamSetupScreen({ navigation, route }: TeamSetupScreenPr
           variant="primary"
           style={styles.continueButton}
         >
-          <Text style={styles.continueText}>전술보드 시작</Text>
+          <Text style={styles.continueText}>{t('teamSetup.common.start')}</Text>
         </Button>
       </View>
     </SafeAreaView>
@@ -334,13 +322,31 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 12,
+  },
+  headerLeft: {
+    width: 60,
   },
   title: {
     color: 'white',
     fontSize: 20,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  languageButton: {
+    width: 60,
+    height: 32,
+    backgroundColor: '#333',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  languageButtonText: {
+    color: COLORS.PRIMARY,
+    fontSize: 14,
     fontWeight: '600',
   },
   content: {

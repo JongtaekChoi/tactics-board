@@ -1,0 +1,67 @@
+{
+  "teamSetup": {
+    "title": "Team Setup",
+    "homeTeam": {
+      "title": "Select Home Team",
+      "description": "Choose your home team"
+    },
+    "awayTeam": {
+      "title": "Away Team Settings",
+      "description": "Both teams mode",
+      "homeOnlyMode": "Home team only mode",
+      "selectTitle": "Select Away Team"
+    },
+    "playerCount": {
+      "title": "Player Count",
+      "descriptions": {
+        "3": "Basic drills",
+        "4": "Passing practice",
+        "5": "Indoor soccer",
+        "6": "Small group training",
+        "7": "Futsal / Youth",
+        "8": "Extended practice",
+        "9": "Scrimmage",
+        "10": "Nearly full team",
+        "11": "Official match"
+      },
+      "unit": "players"
+    },
+    "tactical": {
+      "title": "Tactical Formation",
+      "description": "Which formation would you like to use?",
+      "formations": {
+        "free": "Free tactics",
+        "4-4-2": "4-4-2 Classic",
+        "4-3-3": "4-3-3 Attacking",
+        "3-5-2": "3-5-2 Midfield",
+        "4-2-3-1": "4-2-3-1 Modern",
+        "5-3-2": "5-3-2 Defensive",
+        "setpiece": "Set piece"
+      },
+      "descriptions": {
+        "free": "Basic 2-line formation",
+        "4-4-2": "Balanced formation",
+        "4-3-3": "Attacking formation",
+        "3-5-2": "Midfield control formation",
+        "4-2-3-1": "Modern formation",
+        "5-3-2": "Defensive formation",
+        "setpiece": "Corner kick tactics"
+      }
+    },
+    "common": {
+      "noTeam": "Continue without team",
+      "start": "Start Tactics Board",
+      "loading": "Loading team list...",
+      "noTeams": "No teams registered.",
+      "createTeam": "Create New Team"
+    }
+  },
+  "common": {
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm"
+  }
+}
