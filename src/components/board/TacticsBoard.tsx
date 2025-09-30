@@ -14,6 +14,7 @@ interface TacticsBoardProps {
   strokes: Stroke[];
   currentStroke: Stroke | null;
   selectedId: string | null;
+  selectedStrokeId?: string | null;
   gesture: any;
   dragOffset?: any;
   isDragging?: any;
@@ -25,6 +26,7 @@ export default function TacticsBoard({
   strokes,
   currentStroke,
   selectedId,
+  selectedStrokeId,
   gesture,
   dragOffset,
   isDragging,
@@ -36,7 +38,7 @@ export default function TacticsBoard({
     <GestureDetector gesture={gesture}>
       <Animated.View style={[styles.board, { width: BOARD_WIDTH, height: BOARD_HEIGHT }]}>
         <Pitch />
-        <SvgOverlay strokes={strokes} />
+        <SvgOverlay strokes={strokes} selectedStrokeId={selectedStrokeId} />
         {currentStroke && <SvgOverlay strokes={[currentStroke]} />}
         {players.map((player) => (
           <Token

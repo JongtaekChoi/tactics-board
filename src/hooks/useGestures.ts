@@ -3,19 +3,21 @@ import { runOnJS, useSharedValue } from "react-native-reanimated";
 
 import { Gesture } from "react-native-gesture-handler";
 import { useFormationHelpers } from "./useFormationHelpers";
-import { selectNextPlayerInArea } from "../utils/helpers";
+import { selectNextPlayerInArea, findNearestStroke } from "../utils/helpers";
 
 interface UseGesturesProps {
   mode: Mode;
   color: string;
   width: number;
   players: Player[];
+  strokes: Stroke[];
   onStartDrawing: (point: Point) => void;
   onUpdateDrawing: (point: Point) => void;
   onFinishDrawing: () => void;
   onPlayerSelect: (playerId: string | null) => void;
   onPlayerMove: (playerId: string, x: number, y: number) => void;
   onPlayerEdit: (playerId: string) => void;
+  onStrokeSelect: (strokeId: string | null) => void;
   selectedId: string | null;
 }
 
@@ -24,12 +26,14 @@ export const useGestures = ({
   color,
   width,
   players,
+  strokes,
   onStartDrawing,
   onUpdateDrawing,
   onFinishDrawing,
   onPlayerSelect,
   onPlayerMove,
   onPlayerEdit,
+  onStrokeSelect,
   selectedId,
 }: UseGesturesProps) => {
   const { findNearestPlayer } = useFormationHelpers();
@@ -133,11 +137,25 @@ export const useGestures = ({
         // 새로운 플레이어 선택 (순환)
         onPlayerSelect(nextPlayer.id);
         dragPlayerId.value = nextPlayer.id;
-      } else if (selectedId) {
-        // 터치 영역에 플레이어가 없으면 선택된 플레이어를 그 위치로 이동
-        onPlayerMove(selectedId, x, y);
-        onPlayerSelect(null);
-        dragPlayerId.value = null;
+        onStrokeSelect(null); // 플레이어 선택 시 스트로크 선택 해제
+      } else {
+        // 플레이어가 없으면 스트로크 확인
+        const nearestStroke = findNearestStroke(x, y, strokes);
+
+        if (nearestStroke) {
+          // 스트로크 선택
+          onStrokeSelect(nearestStroke.id);
+          onPlayerSelect(null); // 스트로크 선택 시 플레이어 선택 해제
+          dragPlayerId.value = null;
+        } else if (selectedId) {
+          // 터치 영역에 아무것도 없고 플레이어가 선택된 경우 그 위치로 이동
+          onPlayerMove(selectedId, x, y);
+          onPlayerSelect(null);
+          dragPlayerId.value = null;
+        } else {
+          // 아무것도 선택되지 않은 상태에서 빈 곳을 터치하면 모든 선택 해제
+          onStrokeSelect(null);
+        }
       }
     } catch (error) {
       console.error("Gesture tap error:", error);

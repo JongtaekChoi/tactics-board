@@ -1,4 +1,4 @@
-import { Player } from '../types';
+import { Player, Stroke, Point } from '../types';
 import { TeamSetupConfig, TacticalType } from '../types/navigation';
 import { BOARD_WIDTH, BOARD_HEIGHT, SELECTION_RADIUS } from './constants';
 
@@ -336,4 +336,57 @@ export const selectNextPlayerInArea = (
 export const findNearestPlayer = (x: number, y: number, players: Player[]): Player | null => {
   const playersInArea = findPlayersInTouchArea(x, y, players);
   return playersInArea.length > 0 ? playersInArea[0] : null;
+};
+
+// 점과 선분 사이의 최단 거리 계산
+const distanceToLineSegment = (px: number, py: number, x1: number, y1: number, x2: number, y2: number): number => {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+
+  if (dx === 0 && dy === 0) {
+    // 선분이 점인 경우
+    return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+  }
+
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
+  const projX = x1 + t * dx;
+  const projY = y1 + t * dy;
+
+  return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+};
+
+// 터치 위치에서 가장 가까운 선 찾기
+export const findNearestStroke = (x: number, y: number, strokes: Stroke[]): Stroke | null => {
+  if (!strokes || strokes.length === 0) return null;
+  if (typeof x !== 'number' || typeof y !== 'number' || !isFinite(x) || !isFinite(y)) return null;
+
+  try {
+    let nearestStroke: Stroke | null = null;
+    let minDistance = SELECTION_RADIUS; // 선택 반경 내에서만 감지
+
+    for (const stroke of strokes) {
+      if (!stroke.points || stroke.points.length < 2) continue;
+
+      // 각 선분에 대해 최단 거리 계산
+      for (let i = 0; i < stroke.points.length - 1; i++) {
+        const p1 = stroke.points[i];
+        const p2 = stroke.points[i + 1];
+
+        if (!p1 || !p2 || typeof p1.x !== 'number' || typeof p1.y !== 'number' ||
+            typeof p2.x !== 'number' || typeof p2.y !== 'number') continue;
+
+        const distance = distanceToLineSegment(x, y, p1.x, p1.y, p2.x, p2.y);
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestStroke = stroke;
+        }
+      }
+    }
+
+    return nearestStroke;
+  } catch (error) {
+    console.error('Error in findNearestStroke:', error);
+    return null;
+  }
 };

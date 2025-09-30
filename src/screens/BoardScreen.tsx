@@ -51,12 +51,14 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
     color,
     width: widthPx,
     players: board.allPlayers,
+    strokes: board.strokes,
     onStartDrawing: (point) => board.startDrawing(point, color, widthPx),
     onUpdateDrawing: board.updateDrawing,
     onFinishDrawing: board.finishDrawing,
     onPlayerSelect: board.setSelectedId,
     onPlayerMove: board.movePlayer,
     onPlayerEdit: openTextEditor,
+    onStrokeSelect: board.selectStroke,
     selectedId: board.selectedId,
   });
 
@@ -272,8 +274,10 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         onSave={handleSave}
         onSaveAs={handleSaveAs}
         onLoad={handleLoad}
+        onDeleteStroke={board.deleteSelectedStroke}
         canUndo={board.canUndo}
         canRedo={board.canRedo}
+        canDeleteStroke={!!board.selectedStrokeId}
       />
       {mode === "draw" && (
         <ColorPicker
@@ -289,6 +293,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         strokes={board.strokes}
         currentStroke={board.currentStroke}
         selectedId={board.selectedId}
+        selectedStrokeId={board.selectedStrokeId}
         gesture={composedGesture}
         dragOffset={dragOffset}
         isDragging={isDragging}

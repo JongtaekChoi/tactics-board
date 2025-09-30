@@ -7,7 +7,12 @@ export const useDrawing = () => {
   const [current, setCurrent] = useState<Stroke | null>(null);
 
   const startDrawing = (point: Point, color: string, width: number) => {
-    const newStroke = { color, width, points: [point] };
+    const newStroke = {
+      id: `stroke-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      color,
+      width,
+      points: [point]
+    };
     setCurrent(newStroke);
     setRedoStack([]);
   };

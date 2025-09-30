@@ -12,8 +12,10 @@ interface ToolbarProps {
   onSave: () => void;
   onSaveAs: () => void;
   onLoad: () => void;
+  onDeleteStroke?: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  canDeleteStroke?: boolean;
 }
 
 export default function Toolbar({
@@ -25,8 +27,10 @@ export default function Toolbar({
   onSave,
   onSaveAs,
   onLoad,
+  onDeleteStroke,
   canUndo,
   canRedo,
+  canDeleteStroke,
 }: ToolbarProps) {
   return (
     <ScrollView 
@@ -49,6 +53,13 @@ export default function Toolbar({
       />
       <Button onPress={onUndo} icon="arrow-undo" disabled={!canUndo} size="small" />
       <Button onPress={onRedo} icon="arrow-redo" disabled={!canRedo} size="small" />
+      {canDeleteStroke && onDeleteStroke && (
+        <Button
+          onPress={onDeleteStroke}
+          icon="trash"
+          size="small"
+        />
+      )}
       <Button onPress={onReset} icon="refresh" size="small" />
       <Button onPress={onSave} icon="save" size="small" />
       <Button onPress={onSaveAs} icon="copy" size="small" />

@@ -6,10 +6,16 @@ export const useBoardState = () => {
   const history = useHistory();
   const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
 
   // 그리기 관련
   const startDrawing = (point: Point, color: string, width: number) => {
-    const newStroke = { color, width, points: [point] };
+    const newStroke = {
+      id: `stroke-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      color,
+      width,
+      points: [point]
+    };
     setCurrentStroke(newStroke);
   };
 
@@ -52,6 +58,22 @@ export const useBoardState = () => {
     });
   };
 
+  // 스트로크 선택
+  const selectStroke = (strokeId: string | null) => {
+    setSelectedStrokeId(strokeId);
+  };
+
+  // 선택된 스트로크 삭제
+  const deleteSelectedStroke = () => {
+    if (selectedStrokeId) {
+      history.applyAction({
+        type: 'DELETE_STROKE',
+        strokeId: selectedStrokeId,
+      });
+      setSelectedStrokeId(null);
+    }
+  };
+
   // 데이터에서 상태 설정
   const loadFromData = (homeData: any[], awayData: any[], ballData: any, strokesData: Stroke[]) => {
     history.loadState({
@@ -75,7 +97,8 @@ export const useBoardState = () => {
     strokes: currentState.strokes,
     currentStroke,
     selectedId,
-    
+    selectedStrokeId,
+
     // 액션들
     setSelectedId,
     startDrawing,
@@ -83,8 +106,10 @@ export const useBoardState = () => {
     finishDrawing,
     movePlayer,
     updatePlayerLabel,
+    selectStroke,
+    deleteSelectedStroke,
     loadFromData,
-    
+
     // 히스토리 컨트롤
     undo: history.undo,
     redo: history.redo,

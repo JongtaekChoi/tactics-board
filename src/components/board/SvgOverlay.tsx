@@ -5,6 +5,7 @@ import { Stroke } from '../../types';
 
 interface SvgOverlayProps {
   strokes: Stroke[];
+  selectedStrokeId?: string | null;
 }
 
 function strokeToPath(stroke: Stroke): string {
@@ -20,20 +21,24 @@ function strokeToPath(stroke: Stroke): string {
   return path;
 }
 
-export default function SvgOverlay({ strokes }: SvgOverlayProps) {
+export default function SvgOverlay({ strokes, selectedStrokeId }: SvgOverlayProps) {
   return (
     <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-      {strokes.map((stroke, index) => (
-        <Path
-          key={index}
-          d={strokeToPath(stroke)}
-          stroke={stroke.color}
-          strokeWidth={stroke.width}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-      ))}
+      {strokes.map((stroke, index) => {
+        const isSelected = stroke.id === selectedStrokeId;
+        return (
+          <Path
+            key={stroke.id || index}
+            d={strokeToPath(stroke)}
+            stroke={isSelected ? '#FFD700' : stroke.color}
+            strokeWidth={isSelected ? stroke.width + 2 : stroke.width}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={isSelected ? '10,5' : undefined}
+            fill="none"
+          />
+        );
+      })}
     </Svg>
   );
 }

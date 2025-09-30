@@ -9,10 +9,11 @@ export type HistoryState = {
   strokes: Stroke[];
 };
 
-export type HistoryAction = 
+export type HistoryAction =
   | { type: 'DRAW_STROKE'; stroke: Stroke }
   | { type: 'MOVE_PLAYER'; playerId: string; x: number; y: number }
-  | { type: 'UPDATE_PLAYER_LABEL'; playerId: string; label: string };
+  | { type: 'UPDATE_PLAYER_LABEL'; playerId: string; label: string }
+  | { type: 'DELETE_STROKE'; strokeId: string };
 
 export const useHistory = () => {
   const { initialPlayers, initialBall } = useFormationHelpers();
@@ -77,6 +78,13 @@ export const useHistory = () => {
           away: !isHomePLayer
             ? current.away.map(p => p.id === action.playerId ? { ...p, label: action.label } : p)
             : current.away,
+        };
+        break;
+
+      case 'DELETE_STROKE':
+        newState = {
+          ...current,
+          strokes: current.strokes.filter(stroke => stroke.id !== action.strokeId),
         };
         break;
 

@@ -1,9 +1,10 @@
 export type Point = { x: number; y: number };
 
-export type Stroke = { 
-  color: string; 
-  width: number; 
-  points: Point[] 
+export type Stroke = {
+  id: string;
+  color: string;
+  width: number;
+  points: Point[];
 };
 
 export type Player = { 
