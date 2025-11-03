@@ -225,22 +225,35 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
 
   // 스마트 리셋: 저장된 상태 또는 초기 TeamSetup 설정으로 복원
   const handleSmartReset = () => {
-    if (initialState) {
-      // 저장된 보드 → 마지막 저장된 상태로 복원
-      board.loadFromData(
-        initialState.home,
-        initialState.away,
-        initialState.ball,
-        initialState.strokes
-      );
-    } else {
-      // 새 보드 → TeamSetup에서 선택한 초기 전술로 복원
-      const { home, away, ball } = createPlayersFromConfigSync(currentTeamConfig);
-      board.loadFromData(home, away, ball, []);
-    }
-    
-    // 선택 상태 초기화
-    board.setSelectedId(null);
+    Alert.alert(
+      "전술판 초기화",
+      "현재 변경사항이 모두 사라지고 초기 상태로 돌아갑니다. 계속하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "초기화",
+          style: "destructive",
+          onPress: () => {
+            if (initialState) {
+              // 저장된 보드 → 마지막 저장된 상태로 복원
+              board.loadFromData(
+                initialState.home,
+                initialState.away,
+                initialState.ball,
+                initialState.strokes
+              );
+            } else {
+              // 새 보드 → TeamSetup에서 선택한 초기 전술로 복원
+              const { home, away, ball } = createPlayersFromConfigSync(currentTeamConfig);
+              board.loadFromData(home, away, ball, []);
+            }
+
+            // 선택 상태 초기화
+            board.setSelectedId(null);
+          }
+        },
+      ]
+    );
   };
 
   // BoardContext가 준비되지 않았으면 로딩 표시

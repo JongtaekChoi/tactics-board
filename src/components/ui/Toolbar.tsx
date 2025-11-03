@@ -61,8 +61,8 @@ export default function Toolbar({
         />
       )}
       <Button onPress={onReset} icon="refresh" size="small" />
-      <Button onPress={onSave} icon="save" size="small" />
-      <Button onPress={onSaveAs} icon="copy" size="small" />
+      <Button onPress={onSave} icon="save" label="저장" size="small" />
+      <Button onPress={onSaveAs} icon="copy" label="다른이름" size="small" />
       <Button onPress={onLoad} icon="folder-open" size="small" />
     </ScrollView>
   );
