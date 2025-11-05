@@ -2,12 +2,15 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
+import { COLORS, TOKEN_SIZE } from "../../utils/constants";
 import { StyleSheet, Text } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
-import { COLORS } from "../../utils/constants";
 import React from "react";
 import { Token } from "../../types";
 import { useBoardDimensions } from "../../contexts/BoardContext";
+
+const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 
 interface PlayerTokenProps {
   player: Token;
@@ -63,6 +66,14 @@ export default function PlayerToken({
     };
   });
 
+  const rotation = player.rotation
+    ? player.rotation
+    : player.side === "home"
+    ? 0
+    : player.side === "away"
+    ? 180
+    : 0;
+
   return (
     <Animated.View
       style={[
@@ -80,6 +91,19 @@ export default function PlayerToken({
         animatedStyle,
       ]}
     >
+      {player.side !== "ball" && (
+        <AnimatedSvg
+          style={[
+            styles.directionStyle,
+            { transform: [{ rotate: `${rotation}deg` }] },
+          ]}
+          width={TOKEN_SIZE}
+          height={TOKEN_SIZE}
+          viewBox="0 0 20 20"
+        >
+          <Path d="M5,3 L10,0 L15,3" stroke="white" fill="none" />
+        </AnimatedSvg>
+      )}
       <Text
         style={[
           styles.tokenText,
@@ -104,5 +128,10 @@ const styles = StyleSheet.create({
   tokenText: {
     color: "white",
     fontWeight: "700",
+  },
+  directionStyle: {
+    position: "absolute",
+    top: 0,
+    left: 0,
   },
 });

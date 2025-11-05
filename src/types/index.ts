@@ -12,6 +12,9 @@ export type Token = {
   x: number;
   y: number;
   side: "home" | "away" | "ball";
+  // 0~360 degrees. If not specified, default orientation is upwards if side is "home",
+  // downwards (180) if side is "away", and no rotation if side is "ball".
+  rotation?: number;
   label: string;
 };
 
