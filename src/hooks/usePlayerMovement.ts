@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Player } from '../types';
-import { initialPlayers, initialBall } from '../utils/helpers';
+import { initialBall, initialPlayers } from "../utils/helpers";
+
+import { Token } from "../types";
+import { useState } from "react";
 
 export const usePlayerMovement = () => {
   const [home, setHome] = useState(initialPlayers("home"));
@@ -9,18 +10,26 @@ export const usePlayerMovement = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const movePlayer = (playerId: string, x: number, y: number) => {
-    if (playerId === 'ball') {
-      setBall(prev => ({ ...prev, x, y }));
+    if (playerId === "ball") {
+      setBall((prev) => ({ ...prev, x, y }));
     } else {
-      setHome(arr => arr.map(pl => pl.id === playerId ? { ...pl, x, y } : pl));
-      setAway(arr => arr.map(pl => pl.id === playerId ? { ...pl, x, y } : pl));
+      setHome((arr) =>
+        arr.map((pl) => (pl.id === playerId ? { ...pl, x, y } : pl))
+      );
+      setAway((arr) =>
+        arr.map((pl) => (pl.id === playerId ? { ...pl, x, y } : pl))
+      );
     }
   };
 
   const updatePlayerLabel = (playerId: string, label: string) => {
-    if (playerId === 'ball') return; // 볼은 편집 불가
-    setHome(arr => arr.map(pl => pl.id === playerId ? { ...pl, label } : pl));
-    setAway(arr => arr.map(pl => pl.id === playerId ? { ...pl, label } : pl));
+    if (playerId === "ball") return; // 볼은 편집 불가
+    setHome((arr) =>
+      arr.map((pl) => (pl.id === playerId ? { ...pl, label } : pl))
+    );
+    setAway((arr) =>
+      arr.map((pl) => (pl.id === playerId ? { ...pl, label } : pl))
+    );
   };
 
   const resetPlayers = () => {
@@ -30,7 +39,11 @@ export const usePlayerMovement = () => {
     setSelectedId(null);
   };
 
-  const setPlayersFromData = (homeData: Player[], awayData: Player[], ballData: Player) => {
+  const setPlayersFromData = (
+    homeData: Token[],
+    awayData: Token[],
+    ballData: Token
+  ) => {
     setHome(homeData);
     setAway(awayData);
     setBall(ballData);

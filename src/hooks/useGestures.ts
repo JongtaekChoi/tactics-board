@@ -1,15 +1,15 @@
-import { Mode, Player, Point, Stroke } from "../types";
+import { Mode, Point, Stroke, Token } from "../types";
+import { findNearestStroke, selectNextPlayerInArea } from "../utils/helpers";
 import { runOnJS, useSharedValue } from "react-native-reanimated";
 
 import { Gesture } from "react-native-gesture-handler";
 import { useFormationHelpers } from "./useFormationHelpers";
-import { selectNextPlayerInArea, findNearestStroke } from "../utils/helpers";
 
 interface UseGesturesProps {
   mode: Mode;
   color: string;
   width: number;
-  players: Player[];
+  players: Token[];
   strokes: Stroke[];
   onStartDrawing: (point: Point) => void;
   onUpdateDrawing: (point: Point) => void;

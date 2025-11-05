@@ -1,11 +1,12 @@
+import { Stroke, Token } from "../types";
+import { initialBall, initialPlayers } from "../utils/helpers";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Player, Stroke } from '../types';
-import { initialPlayers, initialBall } from '../utils/helpers';
 
 interface BoardData {
-  home: Player[];
-  away: Player[];
-  ball: Player;
+  home: Token[];
+  away: Token[];
+  ball: Token;
   strokes: Stroke[];
 }
 
@@ -17,7 +18,7 @@ export const useStorage = () => {
   const loadBoard = async (): Promise<BoardData | null> => {
     const raw = await AsyncStorage.getItem("@tactics:last");
     if (!raw) return null;
-    
+
     const data = JSON.parse(raw);
     return {
       home: data.home ?? initialPlayers("home"),

@@ -7,20 +7,20 @@ export type Stroke = {
   points: Point[];
 };
 
-export type Player = { 
-  id: string; 
-  x: number; 
-  y: number; 
-  side: 'home' | 'away' | 'ball'; 
+export type Token = {
+  id: string;
+  x: number;
+  y: number;
+  side: "home" | "away" | "ball";
   label: string;
 };
 
-export type Mode = 'draw' | 'move';
+export type Mode = "draw" | "move";
 
 export type BoardData = {
-  home: Player[];
-  away: Player[];
-  ball: Player;
+  home: Token[];
+  away: Token[];
+  ball: Token;
   strokes: Stroke[];
 };
 

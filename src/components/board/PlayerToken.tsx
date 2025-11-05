@@ -2,28 +2,28 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { COLORS } from "../../utils/constants";
 import { StyleSheet, Text } from "react-native";
 
-import { Player } from "../../types";
+import { COLORS } from "../../utils/constants";
 import React from "react";
+import { Token } from "../../types";
 import { useBoardDimensions } from "../../contexts/BoardContext";
 
-interface TokenProps {
-  player: Player;
+interface PlayerTokenProps {
+  player: Token;
   isSelected: boolean;
   dragOffset?: any;
   isDragging?: any;
   dragPlayerId?: any;
 }
 
-export default function Token({
+export default function PlayerToken({
   player,
   isSelected,
   dragOffset,
   isDragging,
   dragPlayerId,
-}: TokenProps) {
+}: PlayerTokenProps) {
   const { TOKEN_SIZE, TOKEN_RADIUS } = useBoardDimensions();
   const getTokenStyle = () => {
     switch (player.side) {
@@ -83,7 +83,10 @@ export default function Token({
       <Text
         style={[
           styles.tokenText,
-          { fontSize: player.side === "ball" ? TOKEN_SIZE * 0.55 : TOKEN_SIZE * 0.45 }
+          {
+            fontSize:
+              player.side === "ball" ? TOKEN_SIZE * 0.55 : TOKEN_SIZE * 0.45,
+          },
         ]}
       >
         {player.label}

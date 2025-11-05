@@ -1,16 +1,17 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
-import { GestureDetector } from 'react-native-gesture-handler';
-import { Player, Stroke } from '../../types';
-import { COLORS } from '../../utils/constants';
-import { useBoardDimensions } from '../../contexts/BoardContext';
-import Pitch from './Pitch';
-import Token from './Token';
-import SvgOverlay from './SvgOverlay';
+import { Stroke, Token } from "../../types";
+
+import Animated from "react-native-reanimated";
+import { COLORS } from "../../utils/constants";
+import { GestureDetector } from "react-native-gesture-handler";
+import Pitch from "./Pitch";
+import PlayerToken from "./PlayerToken";
+import React from "react";
+import { StyleSheet } from "react-native";
+import SvgOverlay from "./SvgOverlay";
+import { useBoardDimensions } from "../../contexts/BoardContext";
 
 interface TacticsBoardProps {
-  players: Player[];
+  players: Token[];
   strokes: Stroke[];
   currentStroke: Stroke | null;
   selectedId: string | null;
@@ -30,18 +31,20 @@ export default function TacticsBoard({
   gesture,
   dragOffset,
   isDragging,
-  dragPlayerId
+  dragPlayerId,
 }: TacticsBoardProps) {
   const { BOARD_WIDTH, BOARD_HEIGHT } = useBoardDimensions();
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.board, { width: BOARD_WIDTH, height: BOARD_HEIGHT }]}>
+      <Animated.View
+        style={[styles.board, { width: BOARD_WIDTH, height: BOARD_HEIGHT }]}
+      >
         <Pitch />
         <SvgOverlay strokes={strokes} selectedStrokeId={selectedStrokeId} />
         {currentStroke && <SvgOverlay strokes={[currentStroke]} />}
         {players.map((player) => (
-          <Token
+          <PlayerToken
             key={player.id}
             player={player}
             isSelected={selectedId === player.id}
