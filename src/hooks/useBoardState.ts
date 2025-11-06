@@ -58,6 +58,15 @@ export const useBoardState = () => {
     });
   };
 
+  // 플레이어 회전
+  const rotatePlayer = (playerId: string, rotation: number) => {
+    history.applyAction({
+      type: 'ROTATE_PLAYER',
+      playerId,
+      rotation,
+    });
+  };
+
   // 스트로크 선택
   const selectStroke = (strokeId: string | null) => {
     setSelectedStrokeId(strokeId);
@@ -106,6 +115,7 @@ export const useBoardState = () => {
     finishDrawing,
     movePlayer,
     updatePlayerLabel,
+    rotatePlayer,
     selectStroke,
     deleteSelectedStroke,
     loadFromData,

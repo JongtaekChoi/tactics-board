@@ -18,7 +18,7 @@ export type Token = {
   label: string;
 };
 
-export type Mode = "draw" | "move";
+export type Mode = "draw" | "move" | "rotate";
 
 export type BoardData = {
   home: Token[];

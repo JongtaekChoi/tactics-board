@@ -56,17 +56,25 @@ export default function Button({
         styles.btn,
         isSmall && styles.btnSmall,
         getVariantStyle(),
-        active && { backgroundColor: "#222", borderColor: "#fff" },
+        active && {
+          backgroundColor: "#4CAF50",
+          borderColor: "#4CAF50",
+          shadowColor: "#4CAF50",
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          shadowOffset: { width: 0, height: 2 },
+          elevation: 4,
+        },
         disabled && { backgroundColor: "#1a1a1a", borderColor: "#333" },
         style,
       ]}
     >
       <View style={styles.content}>
         {icon && (
-          <Ionicons 
-            name={icon} 
-            size={isSmall ? 16 : 20} 
-            color={disabled ? "#666" : "white"} 
+          <Ionicons
+            name={icon}
+            size={isSmall ? 16 : 20}
+            color={disabled ? "#666" : active ? "white" : "white"}
           />
         )}
         {label && (

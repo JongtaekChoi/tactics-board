@@ -60,6 +60,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
     onPlayerEdit: openTextEditor,
     onStrokeSelect: board.selectStroke,
     selectedId: board.selectedId,
+    onModeChange: setMode,
   });
 
   useEffect(() => {
@@ -291,6 +292,7 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         canUndo={board.canUndo}
         canRedo={board.canRedo}
         canDeleteStroke={!!board.selectedStrokeId}
+        canRotate={!!board.selectedId}
       />
       {mode === "draw" && (
         <ColorPicker
@@ -311,6 +313,15 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         dragOffset={dragOffset}
         isDragging={isDragging}
         dragPlayerId={dragPlayerId}
+        mode={mode}
+        onRotationChange={(tokenId, rotation) => {
+          // Real-time rotation preview - we'll need to update without history
+          // For now, just update the final rotation immediately
+        }}
+        onRotationComplete={(tokenId, rotation) => {
+          // Final rotation with history
+          board.rotatePlayer(tokenId, rotation);
+        }}
       />
 
       <TextEditModal

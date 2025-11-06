@@ -1,4 +1,4 @@
-import { Stroke, Token } from "../../types";
+import { Stroke, Token, Mode } from "../../types";
 
 import Animated from "react-native-reanimated";
 import { COLORS } from "../../utils/constants";
@@ -6,6 +6,7 @@ import { GestureDetector } from "react-native-gesture-handler";
 import Pitch from "./Pitch";
 import PlayerToken from "./PlayerToken";
 import React from "react";
+import RotationRing from "./RotationRing";
 import { StyleSheet } from "react-native";
 import SvgOverlay from "./SvgOverlay";
 import { useBoardDimensions } from "../../contexts/BoardContext";
@@ -20,6 +21,9 @@ interface TacticsBoardProps {
   dragOffset?: any;
   isDragging?: any;
   dragPlayerId?: any;
+  mode?: Mode;
+  onRotationChange?: (tokenId: string, rotation: number) => void;
+  onRotationComplete?: (tokenId: string, rotation: number) => void;
 }
 
 export default function TacticsBoard({
@@ -32,6 +36,9 @@ export default function TacticsBoard({
   dragOffset,
   isDragging,
   dragPlayerId,
+  mode,
+  onRotationChange,
+  onRotationComplete,
 }: TacticsBoardProps) {
   const { BOARD_WIDTH, BOARD_HEIGHT } = useBoardDimensions();
 
@@ -53,6 +60,18 @@ export default function TacticsBoard({
             dragPlayerId={dragPlayerId}
           />
         ))}
+        {mode === "rotate" && selectedId && onRotationChange && onRotationComplete && (
+          (() => {
+            const selectedPlayer = players.find(p => p.id === selectedId);
+            return selectedPlayer ? (
+              <RotationRing
+                token={selectedPlayer}
+                onRotationChange={onRotationChange}
+                onRotationComplete={onRotationComplete}
+              />
+            ) : null;
+          })()
+        )}
       </Animated.View>
     </GestureDetector>
   );

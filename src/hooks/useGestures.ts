@@ -19,6 +19,7 @@ interface UseGesturesProps {
   onPlayerEdit: (playerId: string) => void;
   onStrokeSelect: (strokeId: string | null) => void;
   selectedId: string | null;
+  onModeChange?: (mode: Mode) => void;
 }
 
 export const useGestures = ({
@@ -35,8 +36,32 @@ export const useGestures = ({
   onPlayerEdit,
   onStrokeSelect,
   selectedId,
+  onModeChange,
 }: UseGesturesProps) => {
   const { findNearestPlayer } = useFormationHelpers();
+
+  // 회전 모드에서 링 영역 밖 클릭 감지를 위한 함수
+  const checkRotationRingArea = (
+    x: number,
+    y: number,
+    selectedPlayer: Token | null
+  ) => {
+    "worklet";
+    if (!selectedPlayer) return false;
+
+    // RotationRing 크기: TOKEN_SIZE * 1.8
+    // 두배 영역: TOKEN_SIZE * 3.6
+    const TOKEN_SIZE = 50; // BoardContext에서 가져와야 하지만 일단 하드코딩
+    const checkArea = TOKEN_SIZE * 3.6;
+    const checkRadius = checkArea / 2;
+
+    const distance = Math.sqrt(
+      Math.pow(x - selectedPlayer.x, 2) + Math.pow(y - selectedPlayer.y, 2)
+    );
+
+    return distance <= checkRadius;
+  };
+
   const drawPan = Gesture.Pan()
     .enabled(mode === "draw")
     .onStart((e) => {
@@ -174,6 +199,26 @@ export const useGestures = ({
     }
   };
 
+  const onTabInRotationMode = (x: number, y: number) => {
+    try {
+      const selectedPlayer = players.find((p) => p.id === selectedId) || null;
+      if (!selectedPlayer) return;
+
+      // 선택된 플레이어의 회전 영역 확인
+      const isInsideRotationArea = checkRotationRingArea(x, y, selectedPlayer);
+
+      if (isInsideRotationArea) {
+        // 회전 영역 안에서 클릭하면 회전 모드로 전환
+        onModeChange?.("rotate");
+      } else {
+        // 회전 영역 밖에서 클릭하면 이동 모드로 전환
+        onModeChange?.("move");
+      }
+    } catch (error) {
+      console.error("Gesture tab in rotation mode error:", error);
+    }
+  };
+
   const doubleTap = Gesture.Tap()
     .enabled(mode === "move")
     .numberOfTaps(2)
@@ -189,10 +234,19 @@ export const useGestures = ({
       runOnJS(onTab)(x, y);
     });
 
+  // 회전 모드에서의 탭 제스처
+  const rotateTap = Gesture.Tap()
+    .enabled(mode === "rotate")
+    .onStart((e) => {
+      const { x, y } = e;
+      runOnJS(onTabInRotationMode)(x, y);
+    });
+
   const composedGesture = Gesture.Exclusive(
     drawPan,
     doubleTap,
     tap,
+    rotateTap,
     dragPlayer,
     longTouch
   );

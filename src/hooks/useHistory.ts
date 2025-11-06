@@ -14,7 +14,8 @@ export type HistoryAction =
   | { type: "DRAW_STROKE"; stroke: Stroke }
   | { type: "MOVE_PLAYER"; playerId: string; x: number; y: number }
   | { type: "UPDATE_PLAYER_LABEL"; playerId: string; label: string }
-  | { type: "DELETE_STROKE"; strokeId: string };
+  | { type: "DELETE_STROKE"; strokeId: string }
+  | { type: "ROTATE_PLAYER"; playerId: string; rotation: number };
 
 export const useHistory = () => {
   const { initialPlayers, initialBall } = useFormationHelpers();
@@ -103,6 +104,34 @@ export const useHistory = () => {
             (stroke) => stroke.id !== action.strokeId
           ),
         };
+        break;
+
+      case "ROTATE_PLAYER":
+        if (action.playerId === "ball") {
+          newState = {
+            ...current,
+            ball: { ...current.ball, rotation: action.rotation },
+          };
+        } else {
+          const isHome = current.home.some((p) => p.id === action.playerId);
+          newState = {
+            ...current,
+            home: isHome
+              ? current.home.map((p) =>
+                  p.id === action.playerId
+                    ? { ...p, rotation: action.rotation }
+                    : p
+                )
+              : current.home,
+            away: !isHome
+              ? current.away.map((p) =>
+                  p.id === action.playerId
+                    ? { ...p, rotation: action.rotation }
+                    : p
+                )
+              : current.away,
+          };
+        }
         break;
 
       default:

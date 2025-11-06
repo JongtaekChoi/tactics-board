@@ -85,8 +85,8 @@ export default function PlayerToken({
           height: TOKEN_SIZE,
           borderRadius: TOKEN_RADIUS,
           ...getTokenStyle(),
-          borderWidth: isSelected ? 3 : 0,
-          borderColor: isSelected ? COLORS.SELECTED : "transparent",
+          outlineWidth: 3,
+          outlineColor: isSelected ? COLORS.SELECTED : "transparent",
         },
         animatedStyle,
       ]}
