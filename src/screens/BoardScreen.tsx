@@ -17,6 +17,7 @@ import { useGestures } from "../hooks/useGestures";
 import { useFormationHelpers } from "../hooks/useFormationHelpers";
 import { useBoardDimensions } from "../contexts/BoardContext";
 import Button from "../components/ui/Button";
+import SaveAsModal from "../components/ui/SaveAsModal";
 
 type BoardScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, "Board">;
@@ -39,6 +40,10 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   // 텍스트 편집 상태
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+
+  // 다른 이름으로 저장 모달 상태
+  const [saveAsModalVisible, setSaveAsModalVisible] = useState(false);
+  const [saveAsName, setSaveAsName] = useState(boardName);
 
   // Custom hooks
   const board = useBoardState();
@@ -175,49 +180,45 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
   };
 
   // 다른 이름으로 저장
-  const handleSaveAs = async () => {
-    Alert.prompt(
-      "다른 이름으로 저장",
-      "전술판 이름을 입력하세요",
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "저장",
-          onPress: async (name) => {
-            if (!name?.trim()) return;
+  const handleSaveAs = () => {
+    setSaveAsName(boardName);
+    setSaveAsModalVisible(true);
+  };
 
-            const newId = Date.now().toString();
-            const boardData: BoardData = {
-              home: board.home,
-              away: board.away,
-              ball: board.ball,
-              strokes: board.strokes,
-            };
+  // 다른 이름으로 저장 실행
+  const saveBoardAs = async () => {
+    if (!saveAsName?.trim()) {
+      Alert.alert("오류", "전술판 이름을 입력해주세요.");
+      return;
+    }
 
-            try {
-              await AsyncStorage.setItem(
-                `board_${newId}`,
-                JSON.stringify({
-                  id: newId,
-                  name: name.trim(),
-                  timestamp: Date.now(),
-                  data: boardData,
-                })
-              );
-              setBoardName(name.trim());
-              // boardId를 업데이트해서 이후 저장시 덮어쓰기되도록
-              navigation.setParams({ boardId: newId });
-              Alert.alert("저장 완료", "전술판이 새 이름으로 저장되었습니다.");
-            } catch (error) {
-              console.error("저장 실패:", error);
-              Alert.alert("저장 실패", "전술판 저장 중 오류가 발생했습니다.");
-            }
-          },
-        },
-      ],
-      "plain-text",
-      boardName
-    );
+    const newId = Date.now().toString();
+    const boardData: BoardData = {
+      home: board.home,
+      away: board.away,
+      ball: board.ball,
+      strokes: board.strokes,
+    };
+
+    try {
+      await AsyncStorage.setItem(
+        `board_${newId}`,
+        JSON.stringify({
+          id: newId,
+          name: saveAsName.trim(),
+          timestamp: Date.now(),
+          data: boardData,
+        })
+      );
+      setBoardName(saveAsName.trim());
+      // boardId를 업데이트해서 이후 저장시 덮어쓰기되도록
+      navigation.setParams({ boardId: newId });
+      setSaveAsModalVisible(false);
+      Alert.alert("저장 완료", "전술판이 새 이름으로 저장되었습니다.");
+    } catch (error) {
+      console.error("저장 실패:", error);
+      Alert.alert("저장 실패", "전술판 저장 중 오류가 발생했습니다.");
+    }
   };
 
   const handleLoad = () => {
@@ -330,6 +331,14 @@ export default function BoardScreen({ navigation, route }: BoardScreenProps) {
         onTextChange={setEditText}
         onSave={saveTextEdit}
         onCancel={() => setEditingPlayer(null)}
+      />
+
+      <SaveAsModal
+        visible={saveAsModalVisible}
+        boardName={saveAsName}
+        onBoardNameChange={setSaveAsName}
+        onSave={saveBoardAs}
+        onCancel={() => setSaveAsModalVisible(false)}
       />
     </SafeAreaView>
   );
