@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { BoardData } from '../types';
+import RenameModal from '../components/ui/RenameModal';
 
 type HomeScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
@@ -19,6 +20,9 @@ interface SavedBoard {
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [savedBoards, setSavedBoards] = useState<SavedBoard[]>([]);
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const [renamingBoard, setRenamingBoard] = useState<SavedBoard | null>(null);
+  const [newBoardName, setNewBoardName] = useState('');
 
   useEffect(() => {
     loadSavedBoards();
@@ -64,6 +68,32 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     navigation.navigate('Board', { boardId: board.id, teamConfig: defaultConfig });
   };
 
+  const showBoardOptions = (board: SavedBoard) => {
+    Alert.alert(
+      board.name,
+      '작업을 선택하세요',
+      [
+        {
+          text: '이름 변경',
+          onPress: () => {
+            setRenamingBoard(board);
+            setNewBoardName(board.name);
+            setRenameModalVisible(true);
+          }
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => deleteBoard(board.id)
+        },
+        {
+          text: '취소',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
   const deleteBoard = async (boardId: string) => {
     Alert.alert(
       '보드 삭제',
@@ -79,11 +109,47 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               setSavedBoards(prev => prev.filter(board => board.id !== boardId));
             } catch (error) {
               console.error('보드 삭제 실패:', error);
+              Alert.alert('오류', '보드 삭제 중 오류가 발생했습니다.');
             }
           }
         }
       ]
     );
+  };
+
+  const renameBoard = async () => {
+    if (!renamingBoard) return;
+    if (!newBoardName.trim()) {
+      Alert.alert('오류', '보드 이름을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const updatedBoard = {
+        ...renamingBoard,
+        name: newBoardName.trim(),
+      };
+
+      await AsyncStorage.setItem(
+        `board_${renamingBoard.id}`,
+        JSON.stringify(updatedBoard)
+      );
+
+      setSavedBoards(prev =>
+        prev.map(board =>
+          board.id === renamingBoard.id
+            ? updatedBoard
+            : board
+        )
+      );
+
+      setRenameModalVisible(false);
+      setRenamingBoard(null);
+      Alert.alert('성공', '보드 이름이 변경되었습니다.');
+    } catch (error) {
+      console.error('보드 이름 변경 실패:', error);
+      Alert.alert('오류', '보드 이름 변경 중 오류가 발생했습니다.');
+    }
   };
 
   const formatDate = (timestamp: number) => {
@@ -103,7 +169,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     <TouchableOpacity
       style={styles.boardItem}
       onPress={() => openBoard(item)}
-      onLongPress={() => deleteBoard(item.id)}
+      onLongPress={() => showBoardOptions(item)}
     >
       <View style={styles.boardPreview}>
         <Text style={styles.boardIcon}>⚽</Text>
@@ -144,6 +210,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <Text style={styles.emptySubText}>새로운 전술판을 만들어보세요!</Text>
         </View>
       )}
+
+      <RenameModal
+        visible={renameModalVisible}
+        currentName={newBoardName}
+        onNameChange={setNewBoardName}
+        onSave={renameBoard}
+        onCancel={() => {
+          setRenameModalVisible(false);
+          setRenamingBoard(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
