@@ -3,3 +3,7 @@ node_modules/
 dist/
 .env.local
 .env.*.local
+
+secure/
+
+.DS_Store
