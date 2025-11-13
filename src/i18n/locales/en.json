@@ -2,7 +2,7 @@
   "teamSetup": {
     "title": "Team Setup",
     "homeTeam": {
-      "title": "Select Home Team",
+      "title": "Select Team",
       "description": "Choose your home team"
     },
     "awayTeam": {
@@ -25,6 +25,14 @@
         "11": "Official match"
       },
       "unit": "players"
+    },
+    "homePlayerCount": {
+      "title": "Home Team Players",
+      "description": "Set the number of home team players"
+    },
+    "awayPlayerCount": {
+      "title": "Away Team Players",
+      "description": "Set the number of away team players"
     },
     "tactical": {
       "title": "Tactical Formation",

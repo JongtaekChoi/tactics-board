@@ -3,7 +3,7 @@
     "title": "팀 구성 설정",
     "homeTeam": {
       "title": "홈팀 선택",
-      "description": "홈팀을 선택하세요"
+      "description": "팀을 선택하세요"
     },
     "awayTeam": {
       "title": "어웨이팀 설정",
@@ -25,6 +25,14 @@
         "11": "정규 경기"
       },
       "unit": "명"
+    },
+    "homePlayerCount": {
+      "title": "홈팀 인원 수",
+      "description": "홈팀의 선수 인원을 설정하세요"
+    },
+    "awayPlayerCount": {
+      "title": "어웨이팀 인원 수",
+      "description": "어웨이팀의 선수 인원을 설정하세요"
     },
     "tactical": {
       "title": "전술 유형",

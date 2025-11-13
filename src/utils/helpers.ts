@@ -402,28 +402,38 @@ export const generateDynamicFormation = (
 export const createPlayersFromConfig = (
   config: TeamSetupConfig
 ): { home: Token[]; away: Token[]; ball: Token } => {
-  const { teamSelection, playerCount, tacticalType } = config;
+  const {
+    teamSelection,
+    homePlayerCount,
+    awayPlayerCount,
+    homeTacticalType,
+    awayTacticalType,
+  } = config;
 
-  // 11명인 경우 기존 포메이션 시스템 사용
-  let formation;
-  if (playerCount === 11 && TACTICAL_FORMATIONS[tacticalType]) {
-    formation = TACTICAL_FORMATIONS[tacticalType];
+  // 홈팀과 어웨이팀의 포메이션을 각각 생성
+  let homeFormation, awayFormation;
+
+  if (homePlayerCount === 11 && TACTICAL_FORMATIONS[homeTacticalType]) {
+    const formation = TACTICAL_FORMATIONS[homeTacticalType];
+    homeFormation = formation.home;
   } else {
-    // 다른 인원수인 경우 동적 생성
-    const dynamicFormation = generateDynamicFormation(playerCount);
-    formation = {
-      name: `${playerCount}명 자유 전술`,
-      description: `${playerCount}명 기본 배치`,
-      home: dynamicFormation.home,
-      away: dynamicFormation.away,
-    };
+    const homeDynamic = generateDynamicFormation(homePlayerCount);
+    homeFormation = homeDynamic.home;
+  }
+
+  if (awayPlayerCount === 11 && TACTICAL_FORMATIONS[awayTacticalType]) {
+    const formation = TACTICAL_FORMATIONS[awayTacticalType];
+    awayFormation = formation.away;
+  } else {
+    const awayDynamic = generateDynamicFormation(awayPlayerCount);
+    awayFormation = awayDynamic.away;
   }
 
   const createPositionalPlayers = (
     side: "home" | "away",
-    count: number
+    count: number,
+    positions: number[][]
   ): Token[] => {
-    const positions = formation[side];
     return Array.from({ length: count }).map((_, i) => {
       const pos = positions[i] || positions[positions.length - 1]; // fallback to last position
       return {
@@ -438,26 +448,15 @@ export const createPlayersFromConfig = (
 
   const home =
     teamSelection === "home-only" || teamSelection === "both-teams"
-      ? createPositionalPlayers("home", playerCount)
+      ? createPositionalPlayers("home", homePlayerCount, homeFormation)
       : [];
 
   const away =
     teamSelection === "both-teams"
-      ? createPositionalPlayers("away", playerCount)
+      ? createPositionalPlayers("away", awayPlayerCount, awayFormation)
       : [];
 
-  // 전술 유형별 볼 위치 (세로 축구장 기준)
-  const ballPositions: Record<TacticalType, { x: number; y: number }> = {
-    free: { x: 0.5, y: 0.5 }, // 중앙
-    "4-4-2": { x: 0.5, y: 0.5 }, // 중앙
-    "4-3-3": { x: 0.5, y: 0.4 }, // 약간 전진
-    "3-5-2": { x: 0.5, y: 0.5 }, // 중앙
-    "4-2-3-1": { x: 0.5, y: 0.45 }, // 약간 전진
-    "5-3-2": { x: 0.5, y: 0.6 }, // 약간 후진
-    setpiece: { x: 0.02, y: 0.98 }, // 좌하단 코너
-  };
-
-  const ballPos = ballPositions[tacticalType] || ballPositions.free;
+  const ballPos = { x: 0.5, y: 0.5 };
   const ball = {
     id: "ball",
     x: ballPos.x * BOARD_WIDTH,

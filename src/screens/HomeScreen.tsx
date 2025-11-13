@@ -62,8 +62,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     // 기존 보드는 기본 설정으로 열기
     const defaultConfig = {
       teamSelection: 'both-teams' as const,
-      playerCount: 11 as const,
-      tacticalType: 'free' as const,
+      homePlayerCount: 11,
+      awayPlayerCount: 11,
+      homeTacticalType: 'free' as const,
+      awayTacticalType: 'free' as const,
     };
     navigation.navigate('Board', { boardId: board.id, teamConfig: defaultConfig });
   };
